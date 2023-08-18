@@ -9,8 +9,12 @@ import (
 // 面板接口
 func SetupDashboardRoutes(r *gin.Engine) {
 	dashboard := r.Group("/dashboard")
-	dashboard.Use(middleware.Authorize("/dashboard", "read"))
-	{
-		dashboard.GET("/", handlers.ShowDashboard)
-	}
+
+	// 使用 Casbin 中间件进行权限验证
+	dashboard.Use(
+		middleware.JWTMiddleware(),
+		middleware.InitializeCasbinMiddleware(),
+	)
+
+	dashboard.GET("", handlers.ShowDashboard)
 }

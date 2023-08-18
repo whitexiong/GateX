@@ -4,3 +4,7 @@ p, user, data1, read
 
 g, alice, admin
 g, bob, user
+g, alice, super_admin
+
+
+p, super_admin, /dashboard, GET

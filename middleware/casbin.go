@@ -8,22 +8,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var enforcer *casbin.Enforcer
-
-func InitializeCasbin() error {
-	var err error
-	enforcer, err = casbin.NewEnforcer("config/model.conf", "config/policy.csv")
+func InitializeCasbinMiddleware() gin.HandlerFunc {
+	// 这里，我们在函数内部初始化了 enforcer
+	enforcer, err := casbin.NewEnforcer("config/model.conf", "config/policy.cvs")
 	if err != nil {
-		return err
+		log.Fatalf("Failed to initialize casbin: %v", err)
+		return nil
 	}
-	return nil
-}
 
-func Authorize(obj string, act string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		sub := c.GetString("username") // 假设你从上下文或其他方式获取用户名
+		// 获取权限相关的信息
+		//sub := c.GetString("username")  // 这里假设"username"是存储在Gin的上下文中的当前用户的键。
+		sub := "alice"            // 这里假设"username"是存储在Gin的上下文中的当前用户的键。
+		obj := c.Request.URL.Path // 示例：获取请求的URL作为对象
+		act := c.Request.Method   // 示例：获取HTTP方法作为动作
 
-		// Check if the user.go has the permission to access the object-action
+		// 检查用户是否具有权限访问 object-action
 		ok, err := enforcer.Enforce(sub, obj, act)
 		if err != nil {
 			log.Println("Error occurred while enforcing:", err)
@@ -40,6 +40,6 @@ func Authorize(obj string, act string) gin.HandlerFunc {
 			return
 		}
 
-		c.Next()
+		c.Next() // 确保请求传递给下一个中间件/处理程序
 	}
 }

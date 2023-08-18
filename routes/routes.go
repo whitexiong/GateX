@@ -4,5 +4,6 @@ import "github.com/gin-gonic/gin"
 
 var AllRoutes = []func(r *gin.Engine){
 	SetupDashboardRoutes,
-	SetupSettingsRoutes,
+	SetupUserRoutes,
+	//SetupSettingsRoutes,
 }

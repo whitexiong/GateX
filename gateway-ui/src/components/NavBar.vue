@@ -15,18 +15,10 @@
     </el-menu-item>
 
     <div class="flex-grow" />
-    <el-menu-item index="1">网关</el-menu-item>
     <el-sub-menu index="2">
-      <template #title>工作空间</template>
-      <el-menu-item index="2-1">item one</el-menu-item>
-      <el-menu-item index="2-2">item two</el-menu-item>
-      <el-menu-item index="2-3">item three</el-menu-item>
-      <el-sub-menu index="2-4">
-        <template #title>超级管理员</template>
-        <el-menu-item index="2-4-1">修改密码</el-menu-item>
-        <el-menu-item index="2-4-2">退出登录</el-menu-item>
-        <el-menu-item index="2-4-3">item three</el-menu-item>
-      </el-sub-menu>
+      <template #title>超级管理员</template>
+      <el-menu-item index="2-1">修改密码</el-menu-item>
+      <el-menu-item index="2-1">退出登录</el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>

@@ -22,6 +22,8 @@ func InitDatabase() error {
 		&JwtToken{},
 		&UserRole{},
 		&APIEndpoint{},
+		&Route{},
+		&Menu{},
 	)
 	if err != nil {
 		return err

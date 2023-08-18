@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"errors"
+	"gorm.io/gorm"
+	"time"
+)
 
 type User struct {
 	ID        uint       `gorm:"primaryKey"`
@@ -11,4 +15,15 @@ type User struct {
 	JwtTokens []JwtToken `gorm:"foreignKey:UserID"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+func FindUserByUsername(username string) (*User, error) {
+	var user User
+	if err := DB.Where("username = ?", username).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
 }
