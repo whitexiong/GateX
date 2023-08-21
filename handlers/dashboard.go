@@ -10,7 +10,6 @@ func ShowDashboard(c *gin.Context) {
 	var apis []models.APIEndpoint
 	models.DB.Find(&apis)
 
-	// 返回 JSON 数据
 	c.JSON(200, gin.H{
 		"apis": apis,
 	})

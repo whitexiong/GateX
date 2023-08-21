@@ -44,17 +44,23 @@
       <template #title>日志查看</template>
     </el-menu-item>
 
-    <!-- 系统设置 -->
-    <el-menu-item index="6">
-      <el-icon><Setting /></el-icon>
-      <template #title>系统设置</template>
-    </el-menu-item>
 
     <!-- 监控&告警 -->
-    <el-menu-item index="7">
+    <el-menu-item index="6">
       <el-icon><BellFilled /></el-icon>
       <template #title>监控&告警</template>
     </el-menu-item>
+
+    <!-- 系统设置 -->
+    <el-sub-menu index="7">
+      <template #title>
+        <el-icon><Setting /></el-icon>
+        <span>系统设置</span>
+      </template>
+      <el-menu-item index="3-1">
+        <router-link to="/menu-management">菜单管理</router-link>
+      </el-menu-item>
+    </el-sub-menu>
 
     <!-- 帮助&文档 -->
     <el-menu-item index="8">

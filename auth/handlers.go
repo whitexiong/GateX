@@ -49,3 +49,9 @@ func Login(c *gin.Context) {
 		},
 	})
 }
+
+func Logout(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "退出登录成功！",
+	})
+}

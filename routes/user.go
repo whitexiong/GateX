@@ -18,6 +18,8 @@ func SetupUserRoutes(r *gin.Engine) {
 	// 登录
 	userGroup.POST("/login", auth.Login)
 
+	userGroup.POST("/logout", auth.Logout)
+
 	// 注册
 	//userGroup.POST("/register", )
 

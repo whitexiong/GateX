@@ -19,7 +19,7 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取权限相关的信息
 		//sub := c.GetString("username")  // 这里假设"username"是存储在Gin的上下文中的当前用户的键。
-		sub := "alice"            // 这里假设"username"是存储在Gin的上下文中的当前用户的键。
+		sub := "alice"            // 这里假设"username"是存储在Gin的上下文中的当前用户的键。 这里是为了测试正确性
 		obj := c.Request.URL.Path // 示例：获取请求的URL作为对象
 		act := c.Request.Method   // 示例：获取HTTP方法作为动作
 

@@ -12,7 +12,7 @@ const (
 	secretKey = "YOUR_SECRET_KEY" // 你的JWT签名密钥，实际项目中不应硬编码此值，而应该从环境变量或配置文件中读取。
 )
 
-func JWTMiddleware() gin.HandlerFunc {
+func InitJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头中获取令牌
 		tokenString := c.GetHeader("Authorization")

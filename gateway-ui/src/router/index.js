@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import MainLayout from '@/components/MainLayout.vue';
 import Dashboard from '@/components/Dashboard.vue';
 import UserLogin from '@/components/UserLogin.vue';
+import MenuManagement from '@/views/MenuManagement.vue';
 import axios from "axios";
 
 const routes = [
@@ -22,8 +23,17 @@ const routes = [
                     requiresAuth: true
                 }
             },
+            {
+                path: 'menu-management',
+                name: 'MenuManagement',
+                component:MenuManagement,
+                meta: {
+                    requiresAuth: true
+                }
+            }
         ]
-    }
+    },
+
 ];
 
 const router = createRouter({

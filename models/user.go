@@ -11,8 +11,10 @@ type User struct {
 	Username  string     `gorm:"uniqueIndex;size:100;not null"`
 	Password  string     `gorm:"size:255;not null"`
 	Email     string     `gorm:"size:100"`
+	Status    string     `gorm:"type:enum('active', 'disabled');default:'active'"`
 	Roles     []*Role    `gorm:"many2many:user_roles"`
 	JwtTokens []JwtToken `gorm:"foreignKey:UserID"`
+	Policies  []Policy   `gorm:"many2many:user_policies"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

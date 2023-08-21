@@ -8,7 +8,7 @@
     ></el-input>
 
     <!-- 表格 -->
-    <el-table :data="filteredData" style="width: 1980px; height: 1000px">
+    <el-table :data="displayedData" style="width: 1980px; height: 1000px">
       <slot></slot>
     </el-table>
 
@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { ref, watch, toRefs } from "vue";
+import { ref, watch, toRefs, computed } from "vue";
 
 export default {
   name: "ATable",
@@ -41,27 +41,26 @@ export default {
     }
   },
   setup(props) {
-    const { data, searchQuery } = toRefs(props);
+    const { data } = toRefs(props);
 
-    const internalSearchQuery = ref(searchQuery.value);
+    const internalSearchQuery = ref(props.searchQuery);
     const currentPage = ref(1);
     const pageSize = ref(10);
 
-    const filteredData = ref(data.value);
-
-    watch(data, (newData) => {
-      filteredData.value = newData;
+    const filteredData = computed(() => {
+      return data.value.filter(item =>
+          JSON.stringify(item).toLowerCase().includes(internalSearchQuery.value.toLowerCase())
+      );
     });
 
-    watch(searchQuery, (newQuery) => {
-      internalSearchQuery.value = newQuery;
-      currentPage.value = 1;
+    const displayedData = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return filteredData.value.slice(start, end);
     });
 
     const updateSearch = () => {
-      filteredData.value = data.value.filter(item =>
-          JSON.stringify(item).includes(internalSearchQuery.value)
-      );
+      currentPage.value = 1; // 重置当前页
     };
 
     const handleSizeChange = (newSize) => {
@@ -77,6 +76,7 @@ export default {
       currentPage,
       pageSize,
       filteredData,
+      displayedData,
       updateSearch,
       handleSizeChange,
       handleCurrentChange

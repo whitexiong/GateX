@@ -12,3 +12,8 @@ export const UserLogin = (username, password) => {
         password: password
     });
 }
+
+export const UserLogout = () => {
+    return axios.post(`${BASE_URL}/user/logout`);
+}
+

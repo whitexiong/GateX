@@ -18,7 +18,7 @@
     <el-sub-menu index="2">
       <template #title>超级管理员</template>
       <el-menu-item index="2-1">修改密码</el-menu-item>
-      <el-menu-item index="2-1">退出登录</el-menu-item>
+      <el-menu-item index="2-2" @click="logout">退出登录</el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>
@@ -36,6 +36,11 @@ const handleSelect = (key, keyPath) => {
 </script>
 
 <script>
+import { UserLogout } from '@/services/api';
+import router from "@/router";
+import { ElMessageBox } from 'element-plus';
+
+
 export default {
   methods: {
     toggleSidebar() {
@@ -43,6 +48,25 @@ export default {
     }
   }
 }
+
+const logout = () => {
+  ElMessageBox.confirm('确定要退出吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await UserLogout();
+      localStorage.removeItem('token');
+      router.push('/login');
+    } catch (error) {
+      console.error("退出登录失败：", error);
+    }
+  }).catch(() => {
+    // 这里处理用户点击“取消”按钮的情况，如果你不需要特殊处理，可以留空。
+  });
+};
+
 </script>
 
 <style>
