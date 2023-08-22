@@ -8,9 +8,10 @@
     ></el-input>
 
     <!-- 表格 -->
-    <el-table :data="displayedData" style="width: 1980px; height: 1000px">
+    <el-table :data="displayedData" style="width: 1980px; height: 1000px" tree-props="{children: 'children'}">
       <slot></slot>
     </el-table>
+
 
     <!-- 分页 -->
     <el-pagination

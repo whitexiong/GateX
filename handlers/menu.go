@@ -10,11 +10,58 @@ import (
 func GetAllMenus(c *gin.Context) {
 	// 获取数据库中的所有菜单数据
 	var menus []models.Menu
-	models.DB.Find(&menus)
+	models.DB.Order("`Order`").Find(&menus) // 可能需要根据Order字段排序
+
+	// 转换为新格式
+	transformedMenus := ConvertMenusToTree(menus)
 
 	c.JSON(200, gin.H{
-		"menus": menus,
+		"menus": transformedMenus,
 	})
+}
+
+func ConvertMenusToTree(menus []models.Menu) []map[string]interface{} {
+	var transformedMenus []map[string]interface{}
+	menuMap := make(map[uint]*map[string]interface{})
+
+	// 创建基础格式
+	for _, menu := range menus {
+		transformedMenu := map[string]interface{}{
+			"id":       menu.ID,
+			"name":     menu.Name,
+			"date":     menu.CreatedAt.Format("2006-01-02"),
+			"path":     menu.Path,
+			"children": []map[string]interface{}{},
+		}
+		menuMap[menu.ID] = &transformedMenu
+	}
+
+	// 添加子菜单到对应的父菜单
+	for _, menu := range menus {
+		if menu.ParentID != nil && menuMap[*menu.ParentID] != nil {
+			parentMenu := menuMap[*menu.ParentID]
+			if children, ok := (*parentMenu)["children"].([]map[string]interface{}); ok {
+				(*parentMenu)["children"] = append(children, *menuMap[menu.ID])
+			}
+		}
+	}
+
+	// 只选择顶级菜单(没有父ID的菜单)来构建最终的列表
+	for _, menu := range menus {
+		if menu.ParentID == nil {
+			transformedMenus = append(transformedMenus, *menuMap[menu.ID])
+		}
+	}
+
+	// 添加hasChildren字段
+	for _, menu := range transformedMenus {
+		children := menu["children"].([]map[string]interface{})
+		if len(children) > 0 {
+			menu["hasChildren"] = true
+		}
+	}
+
+	return transformedMenus
 }
 
 // 创建新菜单
