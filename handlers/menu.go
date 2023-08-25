@@ -31,6 +31,7 @@ func ConvertMenusToTree(menus []models.Menu) []map[string]interface{} {
 			"name":     menu.Name,
 			"date":     menu.CreatedAt.Format("2006-01-02"),
 			"path":     menu.Path,
+			"icon":     menu.Icon,
 			"children": []map[string]interface{}{},
 		}
 		menuMap[menu.ID] = &transformedMenu

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var target, _ = url.Parse("http://fire.com:80")
+var target, _ = url.Parse("http://graph.com:80")
 var proxy = httputil.NewSingleHostReverseProxy(target)
 
 func Proxy(w http.ResponseWriter, r *http.Request) {
