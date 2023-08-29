@@ -58,7 +58,7 @@
         <span>系统设置</span>
       </template>
       <el-menu-item index="3-1">
-        <router-link to="/menu-management">菜单管理</router-link>
+        <router-link to="/menu">菜单管理</router-link>
       </el-menu-item>
     </el-sub-menu>
 

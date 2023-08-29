@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import MainLayout from '@/components/MainLayout.vue';
 import Dashboard from '@/components/Dashboard.vue';
 import UserLogin from '@/components/UserLogin.vue';
-import MenuManagement from '@/views/MenuManagement.vue';
+import MenuManagement from '@/views/menu/index.vue';
+import MenuAdd from '@/views/menu/add.vue';
 import axios from "axios";
 
 const routes = [
@@ -24,16 +25,29 @@ const routes = [
                 }
             },
             {
-                path: 'menu-management',
-                name: 'MenuManagement',
-                component:MenuManagement,
-                meta: {
-                    requiresAuth: true
-                }
+                path: 'menu',
+                component: MenuManagement,  // Placeholder, might not display anything or act as a layout
+                children: [
+                    {
+                        path: 'index',
+                        name: 'MenuIndex',
+                        component: MenuManagement,  // Main list view
+                        meta: {
+                            requiresAuth: true
+                        }
+                    },
+                    {
+                        path: 'add',
+                        name: 'AddMenu',
+                        component: MenuAdd,
+                        meta: {
+                            requiresAuth: true
+                        }
+                    }
+                ]
             }
         ]
     },
-
 ];
 
 const router = createRouter({
