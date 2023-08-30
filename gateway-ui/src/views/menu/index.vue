@@ -42,6 +42,7 @@
                   v-model="menu.parent_id"
                   :options="menuOptions"
                   placeholder="请选择父菜单"
+                  @change="onMenuSelected"
               ></el-cascader>
             </el-form-item>
 
@@ -57,9 +58,13 @@
 
             <!-- 图标选择 -->
             <el-form-item label="图标">
-              <el-button @click="openIconSelector">选择图标</el-button>
-              <el-input v-model="selectedIcon" readonly></el-input>
-              <el-dialog v-model="iconDialogVisible" width="70%">
+              <div class="icon-input-container" @click="openIconSelector">
+                <component :is="getIconComponent(displayIcon)" class="display-icon" v-if="displayIcon" />
+                <span v-else class="icon-placeholder">选择图标</span>
+              </div>
+              <el-input v-model="displayIcon" readonly v-if="false"></el-input>
+
+              <el-dialog v-model="iconDialogVisible" width="50%" hight="50%">
                 <div class="icon-grid">
                   <div v-for="icon in paginatedIcons" :key="icon">
                     <div @click="selectIcon(icon)" class="icon-container">
@@ -139,6 +144,27 @@ export default {
 
 
     const iconDialogVisible = ref(false);
+    const menuOptions = ref([]);
+
+    const transformMenuToCascader = (menu) => {
+      return {
+        value: menu.id,
+        label: menu.name,
+        children: menu.children && menu.children.length
+            ? menu.children.map(child => transformMenuToCascader(child))
+            : null
+      };
+    };
+
+    const onMenuSelected = (value) => {
+      menu.value.parent_id = value[value.length - 1]; // 获取最后一个ID作为parent_id
+    };
+
+
+    onMounted(async () => {
+      await fetchMenus();
+      menuOptions.value = menus.value.map(menu => transformMenuToCascader(menu));
+    });
 
     const getIconComponent = (icon) => {
       return icons[icon];
@@ -146,13 +172,22 @@ export default {
     const openIconSelector = () => {
       iconDialogVisible.value = true;
     };
+
+    const displayIcon = computed({
+      get: () => selectedIcon.value,
+      set: (value) => {
+        selectedIcon.value = value;
+        iconDialogVisible.value = false;
+      }
+    });
+
     const selectIcon = (icon) => {
-      selectedIcon.value = icon;
-      iconDialogVisible.value = false;
+      displayIcon.value = icon;
     };
 
     const pageSize = ref(10);  // 每页显示的图标数量
     const currentPage = ref(1); // 当前页数
+
 
     // 分页的图标列表
     const paginatedIcons = computed(() => {
@@ -258,7 +293,10 @@ export default {
       currentPage,
       handlePageChange,
       selectedIcon,
-      pageSize
+      pageSize,
+      displayIcon,
+      menuOptions,        // 新增属性
+      onMenuSelected      // 新增方法
     };
   }
 };
@@ -268,38 +306,32 @@ export default {
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-}
-
-.icon-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+  gap: 2rem;  /* 调整间距 */
 }
 
 .selectable-icon {
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  font-size: 32px;  /* 调整图标大小 */
+  width: auto;  /* 使用图标的实际宽度 */
+  height: auto;  /* 使用图标的实际高度 */
+  margin-bottom: 10px;  /* 在图标和名字之间增加间距 */
 }
 
 .icon-container {
-  display: inline-block;
-  width: 20%;
+  display: flex;
+  flex-direction: column;  /* 让内容垂直排列 */
+  align-items: center;  /* 内容水平居中 */
+  justify-content: center;  /* 内容垂直居中 */
+  width: 100px;
+  height: 100px;
+  padding: 10px;
   text-align: center;
-  padding: 5px;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  cursor: pointer;
 }
 
-
-.icon-item component {
-  font-size: 20px;
+.icon-container:hover {
+  background-color: #f0f0f0;
 }
 
 .icon-item > div {
@@ -312,6 +344,37 @@ export default {
   margin-top: 0.5rem;
   font-size: 0.8rem;
   color: rgba(0, 0, 0, 0.7);
-  text-align: center;
 }
+
+.icon-input-container {
+  display: inline-block;
+  width: 100px;
+  height: 40px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  text-align: center;
+  line-height: 40px;
+  background-color: #f7f7f7;
+  position: relative;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.icon-input-container:hover {
+  background-color: #e5e5e5;
+}
+
+.display-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;  /* 调整显示图标的大小 */
+}
+
+.icon-placeholder {
+  color: #999;
+  font-size: 14px;
+}
+
 </style>

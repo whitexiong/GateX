@@ -57,10 +57,44 @@
         <el-icon><Setting /></el-icon>
         <span>系统设置</span>
       </template>
-      <el-menu-item index="3-1">
+
+      <!-- 用户管理 -->
+      <el-menu-item index="7-1">
+        <router-link to="/users">用户管理</router-link>
+      </el-menu-item>
+
+      <!-- 角色管理 -->
+      <el-menu-item index="7-2">
+        <router-link to="/role">角色管理</router-link>
+      </el-menu-item>
+
+      <!-- 策略管理 -->
+      <el-menu-item index="7-3">
+        <router-link to="/policy">策略管理</router-link>
+      </el-menu-item>
+
+      <!-- 菜单管理 -->
+      <el-menu-item index="7-4">
         <router-link to="/menu">菜单管理</router-link>
       </el-menu-item>
+
+      <!-- 路由管理 -->
+      <el-menu-item index="7-5">
+        <router-link to="/routes">路由管理</router-link>
+      </el-menu-item>
+
+      <!-- 日志查看 -->
+      <el-menu-item index="7-6">
+        <router-link to="/logs">日志查看</router-link>
+      </el-menu-item>
+
+      <!-- 数据恢复 -->
+      <el-menu-item index="7-7">
+        <router-link to="/recovery">数据恢复</router-link>
+      </el-menu-item>
+
     </el-sub-menu>
+
 
     <!-- 帮助&文档 -->
     <el-menu-item index="8">

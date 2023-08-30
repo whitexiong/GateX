@@ -3,6 +3,8 @@ import MainLayout from '@/components/MainLayout.vue';
 import Dashboard from '@/components/Dashboard.vue';
 import UserLogin from '@/components/UserLogin.vue';
 import MenuManagement from '@/views/menu/index.vue';
+import policy from '@/views/policy/index.vue';
+import role from '@/views/role/index.vue';
 import MenuAdd from '@/views/menu/add.vue';
 import axios from "axios";
 
@@ -45,7 +47,35 @@ const routes = [
                         }
                     }
                 ]
-            }
+            },
+            {
+                path: 'policy',
+                component: policy,
+                children: [
+                    {
+                        path: 'index',
+                        name: 'PolicyIndex',
+                        component: policy,
+                        meta: {
+                            requiresAuth: true
+                        }
+                    },
+                ]
+            },
+            {
+                path: 'role',
+                component: role,
+                children: [
+                    {
+                        path: 'index',
+                        name: 'RoleIndex',
+                        component: role,
+                        meta: {
+                            requiresAuth: true
+                        }
+                    },
+                ]
+            },
         ]
     },
 ];

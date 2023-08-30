@@ -5,6 +5,8 @@ import "time"
 type Role struct {
 	ID        uint     `gorm:"primaryKey"`
 	Name      string   `gorm:"uniqueIndex;size:50;not null"`
+	Status    int8     `gorm:"type:tinyint"`
+	Remark    string   `gorm:"type:varchar(255)"` // 添加的remark字段
 	Users     []*User  `gorm:"many2many:user_roles"`
 	Policies  []Policy `gorm:"many2many:role_policies"`
 	CreatedAt time.Time

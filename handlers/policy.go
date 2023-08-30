@@ -7,30 +7,27 @@ import (
 	"strconv"
 )
 
-// 获取所有策略
 func ListPolicies(c *gin.Context) {
 	var policies []models.Policy
 	models.DB.Find(&policies)
-	c.JSON(http.StatusOK, gin.H{"policies": policies})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"policy": policies}})
 }
 
-// 创建新策略
 func CreatePolicy(c *gin.Context) {
 	var policy models.Policy
 	if err := c.BindJSON(&policy); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "data": gin.H{"error": err.Error()}})
 		return
 	}
 
 	if err := models.DB.Create(&policy).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "data": gin.H{"error": "Failed to create policy."}})
 		return
 	}
 
-	c.JSON(http.StatusOK, policy)
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": policy})
 }
 
-// 删除策略
 func DeletePolicy(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var policy models.Policy
@@ -41,7 +38,6 @@ func DeletePolicy(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Policy deleted successfully"})
 }
 
-// 修改策略
 func UpdatePolicy(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var policy models.Policy
@@ -58,6 +54,18 @@ func UpdatePolicy(c *gin.Context) {
 
 	if err := models.DB.Save(&policy).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, policy)
+}
+
+func DetailPolicy(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var policy models.Policy
+
+	if err := models.DB.First(&policy, id).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Policy not found"})
 		return
 	}
 

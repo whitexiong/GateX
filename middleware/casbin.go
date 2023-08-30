@@ -1,24 +1,30 @@
 package middleware
 
 import (
+	"gateway/models"
+	"github.com/casbin/casbin/v2"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
-
-	"github.com/casbin/casbin/v2"
-	"github.com/gin-gonic/gin"
 )
 
-func InitializeCasbinMiddleware() gin.HandlerFunc {
-	// 这里，我们在函数内部初始化了 enforcer
-	enforcer, err := casbin.NewEnforcer("config/model.conf", "config/policy.cvs")
+func InitializeCasbinMiddleware() gin.HandlerFunc { // 假设你已经有一个 GORM 的 db 连接
+	// 使用GORM适配器
+	adapter, err := gormadapter.NewAdapterByDB(models.DB)
 	if err != nil {
-		log.Fatalf("Failed to initialize casbin: %v", err)
+		log.Fatalf("Failed to initialize the GORM adapter: %v", err)
+		return nil
+	}
+
+	enforcer, err := casbin.NewEnforcer("config/model.conf", adapter)
+	if err != nil {
+		log.Fatalf("Failed to initialize casbin with GORM adapter: %v", err)
 		return nil
 	}
 
 	return func(c *gin.Context) {
 		// 获取权限相关的信息
-		//sub := c.GetString("username")  // 这里假设"username"是存储在Gin的上下文中的当前用户的键。
 		sub := "alice"            // 这里假设"username"是存储在Gin的上下文中的当前用户的键。 这里是为了测试正确性
 		obj := c.Request.URL.Path // 示例：获取请求的URL作为对象
 		act := c.Request.Method   // 示例：获取HTTP方法作为动作
