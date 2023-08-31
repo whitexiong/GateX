@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/golang-jwt/jwt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -15,6 +16,20 @@ const (
 func InitJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头中获取令牌
+
+		excludedPaths := []string{"/user/login", "/user/logout"}
+		currentPath := c.FullPath()
+		log.Printf("Current request path: %s", currentPath)
+
+		for _, path := range excludedPaths {
+			log.Printf("Checking path: %s", path)
+			if currentPath == path {
+				log.Println("Path matched excluded path. Skipping Casbin check.")
+				c.Next()
+				return
+			}
+		}
+
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Authorization header not provided"})
@@ -45,6 +60,8 @@ func InitJWTMiddleware() gin.HandlerFunc {
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			c.Set("username", claims["username"])
+			c.Set("role", claims["role"])
+			c.Set("user_id", claims["user_id"])
 			c.Next()
 			return
 		}

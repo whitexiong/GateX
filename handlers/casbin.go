@@ -14,7 +14,7 @@ func GetPolicies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": rules})
+	c.JSON(http.StatusOK, gin.H{"policy": rules})
 }
 
 func AddPolicy(c *gin.Context) {

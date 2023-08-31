@@ -37,7 +37,19 @@ func Login(c *gin.Context) {
 		panic("CustomError#401#Invalid password")
 	}
 
-	token, err := jwtService.GenerateToken(input.Username)
+	// 从user.Roles字段中提取角色名
+	roleNames := extractRoleNames(user.Roles)
+
+	// 传递username, userID, and roles到GenerateToken函数
+	// 这里我假设你希望在token中只包含第一个角色名，如果不是这样，请根据需要修改。
+	var primaryRole string
+	if len(roleNames) > 0 {
+		primaryRole = roleNames[0]
+	} else {
+		primaryRole = ""
+	}
+
+	token, err := jwtService.GenerateToken(user.Username, int64(user.ID), primaryRole)
 	if err != nil {
 		panic("CustomError#500#Could not generate token")
 	}
@@ -46,8 +58,18 @@ func Login(c *gin.Context) {
 		"token": token,
 		"user": gin.H{
 			"username": user.Username,
+			"id":       user.ID,
+			"roles":    roleNames,
 		},
 	})
+}
+
+func extractRoleNames(roles []*models.Role) []string {
+	var roleNames []string
+	for _, role := range roles {
+		roleNames = append(roleNames, role.Name) // 假设Role结构体中有一个Name字段
+	}
+	return roleNames
 }
 
 func Logout(c *gin.Context) {

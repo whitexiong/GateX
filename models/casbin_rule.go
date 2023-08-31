@@ -16,3 +16,7 @@ type CasbinRule struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+func (CasbinRule) TableName() string {
+	return "casbin_rule"
+}

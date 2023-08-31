@@ -21,7 +21,7 @@ type User struct {
 
 func FindUserByUsername(username string) (*User, error) {
 	var user User
-	if err := DB.Where("username = ?", username).First(&user).Error; err != nil {
+	if err := DB.Preload("Roles").Where("username = ?", username).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("user not found")
 		}
