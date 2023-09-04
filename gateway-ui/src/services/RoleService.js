@@ -21,3 +21,16 @@ export const update = (id, roleData) => {
 export const deleteRole = (id) => {
     return axios.delete(`${BASE_URL}/role/delete/${id}`);
 }
+
+export const getPermissionsFromAPI = () => {
+    return axios.get(`${BASE_URL}/role/permissions`);
+}
+
+export const addRoleWithPermissions = (roleData, permissions) => {
+    // 将权限数据添加到角色数据中
+    const completeRoleData = {
+        ...roleData,
+        permissions: permissions
+    };
+    return axios.post(`${BASE_URL}/role/add`, completeRoleData);
+}

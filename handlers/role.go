@@ -6,44 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+	"strings"
 )
-
-// 为角色分配策略
-func AssignPolicyToRole(c *gin.Context) {
-	roleId, _ := strconv.Atoi(c.Param("roleId"))
-	var role models.Role
-	models.DB.Preload("Policies").First(&role, roleId)
-
-	var policies []models.Policy
-	if err := c.BindJSON(&policies); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	for _, policy := range policies {
-		role.Policies = append(role.Policies, policy)
-	}
-
-	models.DB.Save(&role)
-	c.JSON(http.StatusOK, gin.H{"message": "Policies assigned successfully"})
-}
-
-// 移除角色的策略
-func RemovePolicyFromRole(c *gin.Context) {
-	roleId, _ := strconv.Atoi(c.Param("roleId"))
-	var role models.Role
-	models.DB.Preload("Policies").First(&role, roleId)
-
-	var policies []models.Policy
-	if err := c.BindJSON(&policies); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Here, you can remove policy from role. The logic may depend on your ORM and database setup.
-
-	c.JSON(http.StatusOK, gin.H{"message": "Policies removed successfully"})
-}
 
 func GetRoleList(c *gin.Context) {
 	var roles []models.Role
@@ -58,23 +22,52 @@ func GetRoleList(c *gin.Context) {
 }
 
 func AddRole(c *gin.Context) {
-	var role models.Role
+	var role models.RoleRequest
 
 	if err := c.BindJSON(&role); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Print the status after binding
-	fmt.Println("Status after binding:", role.Status)
+	tx := models.DB.Begin() // 开始事务
 
-	if err := models.DB.Create(&role).Error; err != nil {
+	// 创建角色
+	if err := tx.Create(&role.Role).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create role."})
 		return
 	}
 
-	// Print the role after creating
-	fmt.Println("Role after creating:", role)
+	for _, routeID := range role.Permissions {
+		var route models.Route
+		result := tx.First(&route, routeID)
+		if result.Error != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch route."})
+			return
+		}
+
+		// 直接使用完整路由作为对象
+		obj := strings.Trim(route.Path, "/")
+
+		casbinRule := models.CasbinRule{
+			PType: "p",
+			V0:    role.Role.Name,
+			V1:    "/" + obj,
+			V2:    "*", // 默认 * POST GET UPDATE DELETE 根据实际情况修改
+		}
+
+		if err := tx.Create(&casbinRule).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create casbin rule."})
+			return
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction."})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Role added successfully", "data": role})
 }
@@ -105,4 +98,57 @@ func DeleteRole(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Role deleted successfully"})
+}
+
+func GetPermissions(c *gin.Context) {
+	var routes []models.Route
+	if err := models.DB.Find(&routes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve permissions."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"permissions": routes,
+	})
+}
+
+func AddPermissions(c *gin.Context) {
+	roleId, _ := strconv.Atoi(c.Param("roleId"))
+
+	// Assume that the front-end sends the permissions as an array of route IDs.
+	var routeIds []int
+	if err := c.BindJSON(&routeIds); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// For simplicity, we'll use the roleId and routeId to form a permission string and add to the casbin_rule table.
+	for _, routeId := range routeIds {
+		permission := fmt.Sprintf("role_%d_route_%d", roleId, routeId)
+		rule := models.CasbinRule{
+			PType: "p",
+			V0:    strconv.Itoa(roleId),
+			V1:    permission,
+		}
+		if err := models.DB.Create(&rule).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add permission."})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Permissions added successfully"})
+}
+
+func GetRolePermissions(c *gin.Context) {
+	roleId, _ := strconv.Atoi(c.Param("roleId"))
+
+	var rules []models.CasbinRule
+	if err := models.DB.Where("v0 = ?", strconv.Itoa(roleId)).Find(&rules).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve role permissions."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"permissions": rules,
+	})
 }

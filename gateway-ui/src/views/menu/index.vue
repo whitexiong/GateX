@@ -35,7 +35,7 @@
             title="新增菜单"
             @confirm="handleAddMenu"
         >
-          <el-form ref="menuForm" :model="menu" label-width="80px">
+          <el-form ref="menuForm" :model="menu" label-width="80px" style="width: 100%;">
             <!-- 父菜单 -->
             <el-form-item label="父菜单">
               <el-cascader
@@ -84,37 +84,55 @@
               </el-dialog>
             </el-form-item>
 
-            <!-- 权限标识 -->
-            <el-form-item label="权限标识">
-              <el-input v-model="menu.permission" placeholder="请输入权限标识"></el-input>
-            </el-form-item>
-
             <!-- 排序 -->
             <el-form-item label="排序">
               <el-input-number v-model="menu.order" :min="0"></el-input-number>
             </el-form-item>
+
+
+            <el-form-item label="状态">
+              <el-switch
+                  v-model="menu.status"
+                  active-value="1"
+                  inactive-value="0"
+              ></el-switch>
+            </el-form-item>
           </el-form>
+
+
         </ADialog>
       </div>
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="menus" row-key="id" lazy :load="loadMenus" style="width: 1980px; height: 1000px">
+    <el-table :data="menus" row-key="id" lazy :load="loadMenus" style="width: 1980px; height: 1000px" border>
       <el-table-column label="菜单名称">
         <template #default="scope">
           <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="图标">
+      <el-table-column label="图标" align="center" header-align="center">
         <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.icon }}</span>
+        <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">
+            <component :is="getIconComponent(scope.row.icon)" class="display-icon table-icon" v-if="scope.row.icon" />
+        </span>
         </template>
       </el-table-column>
+
       <el-table-column label="菜单链接">
         <template #default="scope">
           <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.path }}</span>
         </template>
       </el-table-column>
+
+      <el-table-column label="操作" width="180">
+        <template #default="{ row }">
+          <el-button size="mini" @click="toggleStatus(row)">
+            {{ row.Status === 1 ? '禁用' : '开启' }}
+          </el-button>
+        </template>
+      </el-table-column>
+
       <el-table-column label="操作" width="180">
         <template #default="scope">
           <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">
@@ -375,6 +393,14 @@ export default {
 .icon-placeholder {
   color: #999;
   font-size: 14px;
+}
+
+.table-icon {
+  font-size: 16px;   /* 如果是字体图标 */
+  width: 16px;      /* 如果是SVG图标 */
+  text-align: left;  /* 显式地设置文本对齐方式为左对齐 */
+  padding: 0;
+  margin: 0;
 }
 
 </style>

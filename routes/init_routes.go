@@ -8,5 +8,6 @@ var AllRoutes = []func(r *gin.Engine){
 	SetupMenuRoutes,
 	SetupPoliciesRoutes,
 	SetupRoleRoutes,
+	SetupRoute,
 	//SetupSettingsRoutes,
 }

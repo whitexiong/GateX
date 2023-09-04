@@ -6,7 +6,7 @@ import (
 )
 
 func SetupUserRoutes(r *gin.Engine) {
-	userGroup := r.Group("/user")
+	group := r.Group("/user")
 
 	// 登录的接口是公开权限
 	//注册中间件
@@ -16,9 +16,9 @@ func SetupUserRoutes(r *gin.Engine) {
 	//)
 
 	// 登录
-	userGroup.POST("/login", auth.Login)
+	group.POST("/login", auth.Login)
 
-	userGroup.POST("/logout", auth.Logout)
+	group.POST("/logout", auth.Logout)
 
 	// 注册
 	//userGroup.POST("/register", )

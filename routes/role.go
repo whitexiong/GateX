@@ -7,11 +7,15 @@ import (
 )
 
 func SetupRoleRoutes(r *gin.Engine) {
-	menuGroup := r.Group("/role")
-	menuGroup.Use(middleware.InitJWTMiddleware())
-	menuGroup.GET("list", handlers.GetRoleList)
-	menuGroup.POST("add", handlers.AddRole)
-	menuGroup.DELETE("delete/:id", handlers.DeleteRole)
-	menuGroup.PUT("update/:id", handlers.UpdatePolicy)
-	menuGroup.GET("detail/:id", handlers.DetailPolicy)
+	group := r.Group("/role")
+	group.Use(middleware.InitJWTMiddleware())
+	group.GET("list", handlers.GetRoleList)
+	group.POST("add", handlers.AddRole)
+	group.DELETE("delete/:id", handlers.DeleteRole)
+	group.PUT("update/:id", handlers.UpdatePolicy)
+	group.GET("detail/:id", handlers.DetailPolicy)
+
+	group.GET("permissions", handlers.GetAllRoutes)
+	group.POST("add-permissions/:roleId", handlers.AddPermissions)
+	group.GET("permissions/:roleId", handlers.GetRolePermissions)
 }

@@ -5,7 +5,7 @@ import UserLogin from '@/components/UserLogin.vue';
 import MenuManagement from '@/views/menu/index.vue';
 import policy from '@/views/policy/index.vue';
 import role from '@/views/role/index.vue';
-import MenuAdd from '@/views/menu/add.vue';
+import route from '@/views/route/index.vue'
 import axios from "axios";
 
 const routes = [
@@ -34,14 +34,6 @@ const routes = [
                         path: 'index',
                         name: 'MenuIndex',
                         component: MenuManagement,  // Main list view
-                        meta: {
-                            requiresAuth: true
-                        }
-                    },
-                    {
-                        path: 'add',
-                        name: 'AddMenu',
-                        component: MenuAdd,
                         meta: {
                             requiresAuth: true
                         }
@@ -76,6 +68,20 @@ const routes = [
                     },
                 ]
             },
+            {
+                path: 'route',
+                component: route,
+                children: [
+                    {
+                        path: 'index',
+                        name: 'RouteIndex',
+                        component: route,
+                        meta: {
+                            requiresAuth: true
+                        }
+                    }
+                ]
+            }
         ]
     },
 ];

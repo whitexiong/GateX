@@ -70,9 +70,11 @@
     </el-table-column>
 
     <el-table-column label="操作" width="180">
-      <template #default="{ row }">
-        <el-button size="mini" @click="editPolicy(row.ID)">编辑</el-button>
-        <el-button size="mini" @click="deletePolicy(row.ID)" type="danger">删除</el-button>
+      <template #default="scope">
+          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">
+            <el-button type="primary" size="small" @click="editMenu(scope.row.id)" style="color: black;">编辑</el-button>
+            <el-button type="danger" size="small" @click="deleteMenu(scope.row.id)" style="margin-left: 10px; color: black;">删除</el-button>
+          </span>
       </template>
     </el-table-column>
   </el-table>
@@ -109,15 +111,23 @@
 import { ref, onMounted } from 'vue';
 import ADialog from '@/components/ADialog.vue';
 import { getList, add, deletePolicy } from "@/services/policyService";
+import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 
 export default {
-  components: { ADialog },
+  components: {Refresh, Search, Plus, RefreshRight, ADialog},
   setup() {
     const policy = ref([]);
     const dialogVisible = ref(false);
     const newPolicy = ref({
       PType: '', V0: '', V1: '', V2: '', V3: '', V4: '', V5: ''
     });
+
+    const searchText = ref('');
+
+    const refresh = () => {
+      searchText.value = '';  // 清空搜索内容
+      fetchPolicies();           // 重新加载角色
+    };
 
     const fetchPolicies = async () => {
       try {
@@ -164,7 +174,14 @@ export default {
     onMounted(fetchPolicies);
 
     return {
-      policy, dialogVisible, newPolicy, fetchPolicies, handleAddPolicy, editPolicy, deletePolicy
+      policy,
+      dialogVisible,
+      newPolicy,
+      fetchPolicies,
+      handleAddPolicy,
+      editPolicy,
+      deletePolicy,
+      refresh
     };
   }
 };

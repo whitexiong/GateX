@@ -13,8 +13,6 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 	// 使用GORM适配器
 	adapter, err := gormadapter.NewAdapterByDB(models.DB)
 
-	log.Println("加载:", 1)
-
 	if err != nil {
 		log.Fatalf("Failed to initialize the GORM adapter: %v", err)
 		return nil
