@@ -1,9 +1,7 @@
 <template>
   <div>
-    <!-- 搜索和刷新区域 -->
     <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
 
-      <!-- 搜索部分 -->
       <div style="display: flex; align-items: center;">
         <el-input
             v-model="searchText"
@@ -21,7 +19,6 @@
         </el-input>
       </div>
 
-      <!-- 操作部分 -->
       <div style="display: flex; align-items: center;">
         <el-button @click="refresh">
           <el-icon><RefreshRight /></el-icon>
@@ -32,11 +29,11 @@
         </el-button>
         <ADialog
             v-model="dialogVisible"
-            title="新增节点"
-            @confirm="saveRoute"
+            :title="dialogTitle"
+            @confirm="saveData"
+            @reset="resetData"
         >
           <el-form ref="RouteForm" :model="Route" label-width="80px" style="width: 100%;">
-            <!-- 父节点 -->
             <el-form-item label="上级节点" style="width: 100%;">
               <el-cascader
                   v-model="Route.ParentID"
@@ -44,8 +41,10 @@
                   :props="anyProps"
                   placeholder="节点名称"
                   @change="onRouteSelected"
+                  clearable
                   style="width: 100%;"
               ></el-cascader>
+
             </el-form-item>
 
             <!-- 名称 -->
@@ -96,48 +95,76 @@
               {{ row.Status === 1 ? '禁用' : '开启' }}
             </el-button>
             <el-button type="primary" size="small" @click="getDetail(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteRoute(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
+            <el-button type="danger" size="small" @click="deleted(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
           </div>
         </template>
       </el-table-column>
-
     </el-table>
 
   </div>
 </template>
 
 <script>
-import {ref, onMounted, computed} from 'vue';
-import { getList,add, deleted, update, detail } from '@/services/routeService';
-import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
+import { ref, onMounted, computed } from 'vue';
+import { getList, add, deletedById, update, detail } from '@/services/routeService';
+import { Plus, Refresh, RefreshRight, Search } from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import * as icons from '@element-plus/icons';
-import {ElMessageBox} from "element-plus";
-import { loadList } from '@/composables/useDataLoader';
+import { useCRUD } from '@/composables/useCRUD';
 
 export default {
-  components: {Refresh, Search, Plus, RefreshRight,ADialog},
+  components: { Refresh, Search, Plus, RefreshRight, ADialog },
   setup() {
-    const dialogVisible = ref(false);
-    const allIcons = Object.keys(icons);  // 获取所有图标的名字
-    const pageSize = ref(10);  // 每页显示的图标数量
-    const currentPage = ref(1); // 当前页数
-    const selectedIcon = ref("");
-    const iconDialogVisible = ref(false);
-    const RouteOptions = ref([]);
-    const {Routes, searchText, listData} = loadList(getList);
-
-    const anyProps = {
-      checkStrictly: true,
-    }
-
-    const Route = ref({
+    const initialRoute = {
       ID: null,
       Name: '',
       Status: null,
       ParentID: null,
       Path: null,
-    });
+    };
+
+    // 定义API方法
+    const apiMethods = {
+      getList,
+      add,
+      update,
+      detail,
+      deletedById
+    };
+
+    // 使用useCRUD抽象
+    const {
+      data: Routes,
+      selected: Route,
+      isLoading,
+      dialogVisible,
+      isEditing,
+      searchText,
+      currentPage,
+      pageSize,
+      listData,
+      saveData,
+      refresh,
+      addNew,
+      getDetail,
+      deleted,
+      resetData,
+      dialogTitle,
+      loadRoutes,
+      handlePageChange,
+      toggleStatus
+    } = useCRUD(apiMethods, initialRoute);
+
+    const allIcons = Object.keys(icons);
+    const selectedIcon = ref("");
+    const iconDialogVisible = ref(false);
+    const RouteOptions = ref([]);
+    const anyProps = {
+      checkStrictly: true,
+      value: 'value',
+      label: 'label',
+      children: 'children'
+    }
 
     const transformRouteToCascader = (Route) => {
       return {
@@ -150,7 +177,9 @@ export default {
     };
 
     const onRouteSelected = (value) => {
-      Route.value.ParentID = value[value.length - 1]; // 获取最后一个ID作为ParentID
+      if (value && Array.isArray(value) && value.length > 0) {
+        Route.ParentID = value[value.length - 1];
+      }
     };
 
     onMounted(async () => {
@@ -158,169 +187,32 @@ export default {
       RouteOptions.value = Routes.value.map(Route => transformRouteToCascader(Route));
     });
 
-    const getIconComponent = (icon) => {
-      return icons[icon];
-    };
-    const openIconSelector = () => {
-      iconDialogVisible.value = true;
-    };
-
-    const displayIcon = computed({
-      get: () => selectedIcon.value,
-      set: (value) => {
-        selectedIcon.value = value;
-        iconDialogVisible.value = false;
-      }
-    });
-
-    const toggleStatus = async (row) => {
-      // 这里，你可以调用一个API来改变数据库中的状态或在前端暂时切换状态。
-      row.Status = row.Status === 1 ? 0 : 1;
-      // 如果你的API要求调用特定的函数来改变状态，你可以在这里添加。
-      // 例如: await toggleRouteStatus(row.id, row.Status);
-    };
-
-    const selectIcon = (icon) => {
-      displayIcon.value = icon;
-    };
-
-    // 分页的图标列表
-    const paginatedIcons = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      const end = start + pageSize.value;
-      return allIcons.slice(start, end);
-    });
-
-    // 分页改变时的处理函数
-    const handlePageChange = (newPage) => {
-      currentPage.value = newPage;
-    };
-
-    const handleAddRoute = async () => {
-      Route.value.Status = parseInt(Route.value.Status);
-      const response = await add(Route.value);
-
-      if (response.code === 200) {
-        dialogVisible.value = false;
-        await listData();
-      } else {
-        await ElMessageBox.alert(response.msg, '添加失败', {
-          confirmButtonText: 'OK',
-          type: 'error'
-        });
-      }
-    };
-
-    const loadRoutes = (row, treeNode, resolve) => {
-      // 因为我们已经处理了所有节点，所以只需从现有的row中提取子节点
-      if (row.children && row.children.length > 0) {
-        return resolve(row.children);
-      }
-      return resolve([]);
-    };
-
-    const saveRoute = async () => {
-      if (isEditing.value) {
-        await updateRoute();
-      } else {
-        await handleAddRoute();
-      }
-    };
-
-    const updateRoute = async () => {
-      Route.value.Status = parseInt(Route.value.Status);
-      console.log(Route.value)
-      const response = await update(Route.value.ID,Route.value);
-
-      if (response.code === 200) {
-        dialogVisible.value = false;
-        await listData();
-      } else {
-        await ElMessageBox.alert(response.msg, '更新失败', {
-          confirmButtonText: 'OK',
-          type: 'error'
-        });
-      }
-    };
-
-    const isEditing = ref(false);
-    const getDetail = async (id) => {
-      try {
-        const routeDetail = await detail(id);
-
-        if (routeDetail) {
-          Object.assign(Route.value, routeDetail.data);
-          Route.value.ParentID = routeDetail.data.ParentID;
-          isEditing.value = true;
-          dialogVisible.value = true;
-        } else {
-          console.error("Failed to fetch route details.");
-        }
-      } catch (error) {
-        console.error("Error fetching route details:", error);
-      }
-    };
-
-    const addNew = () => {
-      dialogVisible.value = true;
-    };
-
-    const deleteRoute = async (id) => {
-      try {
-        await deleted(id);
-        await listData();
-      } catch (error) {
-        console.error("Error deleting Route:", error);
-      }
-    };
-
-    const processRoutes = (Routes, indent) => {
-      return Routes.map(Route => {
-        Route.hasChildren = Route.children && Route.children.length > 0;
-        Route._indent = 0; // 固定缩进为 0
-        if (Route.hasChildren) {
-          Route.children = processRoutes(Route.children, indent + 1);
-        }
-        return Route;
-      });
-    };
-
-    const refresh = () => {
-      searchText.value = '';  // 清空搜索内容
-      listData();           // 重新加载节点
-    };
-
-    onMounted(listData);
-
     return {
       Routes,
-      searchText,
-      loadRoutes,
-      detail,
-      deleteRoute,
-      listData,
-      refresh,
-      addNew,
       Route,
+      isLoading,
       dialogVisible,
-      handleAddRoute,
-      iconDialogVisible,
-      openIconSelector,
-      icons,
-      selectIcon,
-      getIconComponent,
-      allIcons,
-      paginatedIcons,
+      isEditing,
+      searchText,
       currentPage,
-      handlePageChange,
-      selectedIcon,
       pageSize,
-      displayIcon,
+      listData,
+      saveData,
+      refresh,
+      allIcons,
+      selectedIcon,
+      iconDialogVisible,
+      handlePageChange,
       RouteOptions,
       onRouteSelected,
       anyProps,
-      saveRoute,
-      getDetail
+      loadRoutes,
+      toggleStatus,
+      addNew,
+      getDetail,
+      deleted,
+      resetData,
+      dialogTitle
     };
   }
 };
