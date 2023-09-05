@@ -7,11 +7,11 @@
       <div style="display: flex; align-items: center;">
         <el-input
             v-model="searchText"
-            placeholder="请输入菜单名称"
+            placeholder="请输入节点名称"
             style="width: 200px;"
-            @keyup.enter="fetchRoutes">
+            @keyup.enter="listData">
           <template #append>
-            <el-button @click="fetchRoutes" style="margin-right: 5px;">
+            <el-button @click="listData" style="margin-right: 5px;">
               <el-icon><Search /></el-icon>
             </el-button>
             <el-button @click="resetSearch">
@@ -32,15 +32,16 @@
         </el-button>
         <ADialog
             v-model="dialogVisible"
-            title="新增菜单"
-            @confirm="handleAddRoute"
+            title="新增节点"
+            @confirm="saveRoute"
         >
           <el-form ref="RouteForm" :model="Route" label-width="80px" style="width: 100%;">
-            <!-- 父菜单 -->
+            <!-- 父节点 -->
             <el-form-item label="上级节点" style="width: 100%;">
               <el-cascader
-                  v-model="Route.parent_id"
+                  v-model="Route.ParentID"
                   :options="RouteOptions"
+                  :props="anyProps"
                   placeholder="节点名称"
                   @change="onRouteSelected"
                   style="width: 100%;"
@@ -49,21 +50,22 @@
 
             <!-- 名称 -->
             <el-form-item label="节点">
-              <el-input v-model="Route.name" placeholder="请输入名称"></el-input>
+              <el-input v-model="Route.Name" placeholder="请输入名称"></el-input>
             </el-form-item>
 
             <!-- 路径 -->
             <el-form-item label="路径">
-              <el-input v-model="Route.path" placeholder="请输入路径"></el-input>
+              <el-input v-model="Route.Path" placeholder="请输入路径"></el-input>
             </el-form-item>
 
             <!-- 状态 -->
             <el-form-item label="状态">
               <el-switch
-                  v-model="Route.status"
-                  active-value="1"
-                  inactive-value="0"
+                  v-model="Route.Status"
+                  :active-value="1"
+                  :inactive-value="0"
               ></el-switch>
+
             </el-form-item>
 
           </el-form>
@@ -72,7 +74,7 @@
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="Routes" row-key="id" lazy :load="loadRoutes" style="width: 1980px; height: 1000px">
+    <el-table :data="Routes" row-key="id" lazy :load="loadRoutes" style="width: 1980px; height: 1000px" border>
 
       <el-table-column label="节点">
         <template #default="scope">
@@ -80,30 +82,25 @@
         </template>
       </el-table-column>
 
-      <!-- 菜单名称列 -->
+      <!-- 节点名称列 -->
       <el-table-column label="路由名称">
         <template #default="scope">
           <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="260">
         <template #default="{ row }">
-          <el-button size="mini" @click="toggleStatus(row)">
-            {{ row.Status === 1 ? '禁用' : '开启' }}
-          </el-button>
+          <div style="display: flex; align-items: center;">
+            <el-button size="small" @click="toggleStatus(row)">
+              {{ row.Status === 1 ? '禁用' : '开启' }}
+            </el-button>
+            <el-button type="primary" size="small" @click="getDetail(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
+            <el-button type="danger" size="small" @click="deleteRoute(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
+          </div>
         </template>
       </el-table-column>
 
-      <!-- 操作列 -->
-      <el-table-column label="操作" width="180">
-        <template #default="scope">
-      <span>
-        <el-button type="primary" size="small" @click="editRoute(scope.row.id)" style="color: black;">编辑</el-button>
-        <el-button type="danger" size="small" @click="deleteRoute(scope.row.id)" style="margin-left: 10px; color: black;">删除</el-button>
-      </span>
-        </template>
-      </el-table-column>
     </el-table>
 
   </div>
@@ -111,22 +108,36 @@
 
 <script>
 import {ref, onMounted, computed} from 'vue';
-import { getList } from '@/services/routeService';
+import { getList,add, deleted, update, detail } from '@/services/routeService';
 import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import * as icons from '@element-plus/icons';
+import {ElMessageBox} from "element-plus";
+import { loadList } from '@/composables/useDataLoader';
 
 export default {
   components: {Refresh, Search, Plus, RefreshRight,ADialog},
   setup() {
-    const Routes = ref([]);
-    const searchText = ref('');
     const dialogVisible = ref(false);
     const allIcons = Object.keys(icons);  // 获取所有图标的名字
-
-
+    const pageSize = ref(10);  // 每页显示的图标数量
+    const currentPage = ref(1); // 当前页数
+    const selectedIcon = ref("");
     const iconDialogVisible = ref(false);
     const RouteOptions = ref([]);
+    const {Routes, searchText, listData} = loadList(getList);
+
+    const anyProps = {
+      checkStrictly: true,
+    }
+
+    const Route = ref({
+      ID: null,
+      Name: '',
+      Status: null,
+      ParentID: null,
+      Path: null,
+    });
 
     const transformRouteToCascader = (Route) => {
       return {
@@ -139,12 +150,11 @@ export default {
     };
 
     const onRouteSelected = (value) => {
-      Route.value.parent_id = value[value.length - 1]; // 获取最后一个ID作为parent_id
+      Route.value.ParentID = value[value.length - 1]; // 获取最后一个ID作为ParentID
     };
 
-
     onMounted(async () => {
-      await fetchRoutes();
+      await listData();
       RouteOptions.value = Routes.value.map(Route => transformRouteToCascader(Route));
     });
 
@@ -163,13 +173,16 @@ export default {
       }
     });
 
+    const toggleStatus = async (row) => {
+      // 这里，你可以调用一个API来改变数据库中的状态或在前端暂时切换状态。
+      row.Status = row.Status === 1 ? 0 : 1;
+      // 如果你的API要求调用特定的函数来改变状态，你可以在这里添加。
+      // 例如: await toggleRouteStatus(row.id, row.Status);
+    };
+
     const selectIcon = (icon) => {
       displayIcon.value = icon;
     };
-
-    const pageSize = ref(10);  // 每页显示的图标数量
-    const currentPage = ref(1); // 当前页数
-
 
     // 分页的图标列表
     const paginatedIcons = computed(() => {
@@ -183,25 +196,69 @@ export default {
       currentPage.value = newPage;
     };
 
+    const handleAddRoute = async () => {
+      Route.value.Status = parseInt(Route.value.Status);
+      const response = await add(Route.value);
 
-    const selectedIcon = ref("");
-    const Route = ref({
-      name: '',       // 菜单名称
-    });
-    const handleAddRoute = () => {
-      console.log('Route data:', Route.value);
+      if (response.code === 200) {
+        dialogVisible.value = false;
+        await listData();
+      } else {
+        await ElMessageBox.alert(response.msg, '添加失败', {
+          confirmButtonText: 'OK',
+          type: 'error'
+        });
+      }
     };
 
     const loadRoutes = (row, treeNode, resolve) => {
-      // 因为我们已经处理了所有菜单，所以只需从现有的row中提取子菜单
+      // 因为我们已经处理了所有节点，所以只需从现有的row中提取子节点
       if (row.children && row.children.length > 0) {
         return resolve(row.children);
       }
       return resolve([]);
     };
 
-    const editRoute = (id) => {
-      // 编辑逻辑
+    const saveRoute = async () => {
+      if (isEditing.value) {
+        await updateRoute();
+      } else {
+        await handleAddRoute();
+      }
+    };
+
+    const updateRoute = async () => {
+      Route.value.Status = parseInt(Route.value.Status);
+      console.log(Route.value)
+      const response = await update(Route.value.ID,Route.value);
+
+      if (response.code === 200) {
+        dialogVisible.value = false;
+        await listData();
+      } else {
+        await ElMessageBox.alert(response.msg, '更新失败', {
+          confirmButtonText: 'OK',
+          type: 'error'
+        });
+      }
+    };
+
+    const isEditing = ref(false);
+    const getDetail = async (id) => {
+      try {
+        const routeDetail = await detail(id);
+
+        if (routeDetail) {
+          Object.assign(Route.value, routeDetail.data);
+          Route.value.ParentID = routeDetail.data.ParentID;
+          isEditing.value = true;
+          dialogVisible.value = true;
+        } else {
+          console.error("Failed to fetch route details.");
+        }
+      } catch (error) {
+        console.error("Error fetching route details:", error);
+      }
     };
 
     const addNew = () => {
@@ -210,20 +267,10 @@ export default {
 
     const deleteRoute = async (id) => {
       try {
-        await deleteRoute(id);
-        await fetchRoutes();
+        await deleted(id);
+        await listData();
       } catch (error) {
         console.error("Error deleting Route:", error);
-      }
-    };
-
-    const fetchRoutes = async () => {
-      try {
-        const response = await getList({ name: searchText.value });
-        const fetchedRoutes = Array.isArray(response.data.routes) ? response.data.routes : [];
-        Routes.value = processRoutes(fetchedRoutes, 0);
-      } catch (error) {
-        console.error("Error fetching Routes:", error);
       }
     };
 
@@ -240,18 +287,18 @@ export default {
 
     const refresh = () => {
       searchText.value = '';  // 清空搜索内容
-      fetchRoutes();           // 重新加载菜单
+      listData();           // 重新加载节点
     };
 
-    onMounted(fetchRoutes);
+    onMounted(listData);
 
     return {
       Routes,
       searchText,
       loadRoutes,
-      editRoute,
+      detail,
       deleteRoute,
-      fetchRoutes,
+      listData,
       refresh,
       addNew,
       Route,
@@ -269,8 +316,11 @@ export default {
       selectedIcon,
       pageSize,
       displayIcon,
-      RouteOptions,        // 新增属性
-      onRouteSelected      // 新增方法
+      RouteOptions,
+      onRouteSelected,
+      anyProps,
+      saveRoute,
+      getDetail
     };
   }
 };
@@ -293,6 +343,4 @@ export default {
 .wide-cascader .el-input__inner {
   width: 300px !important;
 }
-
-
 </style>

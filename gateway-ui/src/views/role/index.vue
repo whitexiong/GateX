@@ -141,7 +141,6 @@ export default {
     const handleAddRole = async () => {
 
       role.value.Status = parseInt(role.value.Status);
-      // 调用后端API来新增角色及其权限
       const response = await addRoleWithPermissions(role.value, treeRef.value.getCheckedKeys());
 
       if (response.success) {

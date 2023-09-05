@@ -11,10 +11,16 @@ func GetAllRoutes(c *gin.Context) {
 	models.DB.Order("created_at").Find(&routes)
 
 	transformedRoutes := ConvertRoutesToTree(routes)
+	SendResponse(c, http.StatusOK, 200, transformedRoutes, "Success")
+	return
+}
 
-	c.JSON(200, gin.H{
-		"routes": transformedRoutes,
-	})
+func GetRoute(c *gin.Context) {
+	var route models.Route
+	id := c.Param("id")
+	models.DB.Find(&route, id)
+	SendResponse(c, http.StatusOK, 200, route, "Success")
+	return
 }
 
 func ConvertRoutesToTree(routes []models.Route) []map[string]interface{} {
@@ -56,16 +62,16 @@ func CreateRoute(c *gin.Context) {
 	var route models.Route
 
 	if err := c.BindJSON(&route); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		SendResponse(c, http.StatusBadRequest, 400, nil, "Invalid request data")
 		return
 	}
 
 	if result := models.DB.Create(&route); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create route entry"})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to create route entry")
 		return
 	}
 
-	c.JSON(http.StatusOK, route)
+	SendResponse(c, http.StatusOK, 200, route, "Success")
 }
 
 func GetRouteByID(c *gin.Context) {
@@ -80,41 +86,41 @@ func GetRouteByID(c *gin.Context) {
 	c.JSON(http.StatusOK, route)
 }
 
-func UpdateRouteByID(c *gin.Context) {
+func UpdateRoute(c *gin.Context) {
 	var route models.Route
 	id := c.Param("id")
 
 	if result := models.DB.First(&route, id); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Route entry not found"})
+		SendResponse(c, http.StatusNotFound, 404, nil, "Route entry not found")
 		return
 	}
 
 	if err := c.BindJSON(&route); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		SendResponse(c, http.StatusBadRequest, 400, nil, "Invalid request data")
 		return
 	}
 
 	if result := models.DB.Save(&route); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update route entry"})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to update route entry")
 		return
 	}
 
-	c.JSON(http.StatusOK, route)
+	SendResponse(c, http.StatusOK, 200, route, "Success")
 }
 
-func DeleteRouteByID(c *gin.Context) {
+func DeleteRoute(c *gin.Context) {
 	var route models.Route
 	id := c.Param("id")
 
 	if result := models.DB.First(&route, id); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Route entry not found"})
+		SendResponse(c, http.StatusNotFound, 404, nil, "Route entry not found")
 		return
 	}
 
-	if result := models.DB.Delete(&route); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete route entry"})
+	if result := models.DB.Delete(&route, id); result.Error != nil {
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to delete route entry")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Route entry deleted successfully"})
+	SendResponse(c, http.StatusOK, 200, nil, "Route entry deleted successfully")
 }

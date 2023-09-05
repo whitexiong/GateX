@@ -125,4 +125,14 @@ axios.interceptors.request.use(
 );
 
 
+// 全局响应拦截器
+axios.interceptors.response.use(
+    response => {
+        return response.data;
+    },
+    error => {
+        return Promise.reject(error);
+    }
+);
+
 export default router;
