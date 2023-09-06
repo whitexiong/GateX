@@ -2,9 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"gateway/handlers"
 	"gateway/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"net/http"
 	"time"
 )
 
@@ -54,26 +56,26 @@ func Login(c *gin.Context) {
 		panic("CustomError#500#Could not generate token")
 	}
 
-	c.JSON(200, gin.H{
+	handlers.SendResponse(c, http.StatusOK, 200, gin.H{
 		"token": token,
 		"user": gin.H{
 			"username": user.Username,
 			"id":       user.ID,
 			"roles":    roleNames,
 		},
-	})
+	}, "Success")
+	return
 }
 
 func extractRoleNames(roles []*models.Role) []string {
 	var roleNames []string
 	for _, role := range roles {
-		roleNames = append(roleNames, role.Name) // 假设Role结构体中有一个Name字段
+		roleNames = append(roleNames, role.Name)
 	}
 	return roleNames
 }
 
 func Logout(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "退出登录成功！",
-	})
+	handlers.SendResponse(c, http.StatusOK, 200, nil, "Success")
+	return
 }

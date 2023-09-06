@@ -1,5 +1,6 @@
 import {ref, reactive, toRefs} from 'vue';
 import {ElMessageBox} from 'element-plus';
+import {getList} from "@/services/menuService";
 
 export const useCRUD = (apiMethods, initialData) => {
     const data = ref([]);
@@ -35,14 +36,16 @@ export const useCRUD = (apiMethods, initialData) => {
     const processDataForRequest = (data) => {
         let processedData = {...data};
         if (Array.isArray(processedData.ParentID) && processedData.ParentID.length) {
-            processedData.ParentID = processedData.ParentID[0];
+            processedData.ParentID = processedData.ParentID.pop();
         }
+        processedData.Status = parseInt(processedData.Status);
         return processedData;
     };
 
     const saveData = async () => {
         state.dialogVisible = true;
         let processedData = processDataForRequest(state.selected);
+
         try {
             if (state.isEditing) {
                 await apiMethods.update(processedData.ID, processedData);
@@ -72,7 +75,8 @@ export const useCRUD = (apiMethods, initialData) => {
 
                 state.isEditing = true;
                 state.dialogVisible = true;
-                state.dialogTitle = '编辑节点';
+                state.dialogTitle = '编辑';
+                console.log("编辑", state.selected)
             } else {
                 console.error("Failed to fetch details.");
             }
@@ -81,13 +85,11 @@ export const useCRUD = (apiMethods, initialData) => {
         }
     };
 
-    //刷新
     const refresh = async () => {
         state.searchText = '';
         await listData();
     };
 
-    //弹窗
     const addNew = () => {
         state.selected = {...initialData};
         state.dialogVisible = true;
@@ -98,7 +100,6 @@ export const useCRUD = (apiMethods, initialData) => {
     const resetData = () => {
         state.selected = {...initialData};
     }
-
 
     const deleted = async (id) => {
         ElMessageBox.confirm('确定删除此项吗?', '提示', {
@@ -121,7 +122,7 @@ export const useCRUD = (apiMethods, initialData) => {
 
     const toggleStatus = async (row) => {
         row.Status = row.Status === 1 ? 0 : 1;
-        state.selected = row;  // 确保 state.selected 是当前的 row 数据
+        state.selected = row;
         await saveData();
         state.dialogVisible = false;
     };
@@ -131,11 +132,10 @@ export const useCRUD = (apiMethods, initialData) => {
         await listData();
     };
 
-    const loadRoutes = async (row) => {
+    const loadTree = async (row, treeNode, resolve) => {
         if (row.children && row.children.length > 0) {
-            return row.children;
+            return resolve(row.children);
         }
-        return [];
     };
 
     return {
@@ -148,7 +148,7 @@ export const useCRUD = (apiMethods, initialData) => {
         getDetail,
         deleted,
         resetData,
-        loadRoutes,
+        loadTree,
         handlePageChange,
         toggleStatus
     };

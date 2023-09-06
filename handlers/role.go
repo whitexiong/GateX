@@ -12,20 +12,18 @@ import (
 func GetRoleList(c *gin.Context) {
 	var roles []models.Role
 	if err := models.DB.Find(&roles).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve roles."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to retrieve roles.")
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"roles": roles,
-	})
+	SendResponse(c, http.StatusOK, 200, roles, "Success")
+	return
 }
 
 func AddRole(c *gin.Context) {
 	var role models.RoleRequest
 
 	if err := c.BindJSON(&role); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		SendResponse(c, http.StatusBadRequest, 400, nil, err.Error())
 		return
 	}
 
@@ -34,7 +32,7 @@ func AddRole(c *gin.Context) {
 	// 创建角色
 	if err := tx.Create(&role.Role).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create role."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to create role.")
 		return
 	}
 
@@ -43,86 +41,78 @@ func AddRole(c *gin.Context) {
 		result := tx.First(&route, routeID)
 		if result.Error != nil {
 			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch route."})
+			SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to fetch route.")
 			return
 		}
 
-		// 直接使用完整路由作为对象
 		obj := strings.Trim(route.Path, "/")
-
 		casbinRule := models.CasbinRule{
 			PType: "p",
 			V0:    role.Role.Name,
 			V1:    "/" + obj,
-			V2:    "*", // 默认 * POST GET UPDATE DELETE 根据实际情况修改
+			V2:    "*",
 		}
 
 		if err := tx.Create(&casbinRule).Error; err != nil {
 			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create casbin rule."})
+			SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to create casbin rule.")
 			return
 		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to commit transaction.")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Role added successfully", "data": role})
+	SendResponse(c, http.StatusOK, 200, role, "Role added successfully")
+	return
 }
 
 func UpdateRole(c *gin.Context) {
 	roleId, _ := strconv.Atoi(c.Param("roleId"))
-
 	var updatedRole models.Role
 	if err := c.BindJSON(&updatedRole); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		SendResponse(c, http.StatusBadRequest, 400, nil, err.Error())
 		return
 	}
 
 	if err := models.DB.Model(&models.Role{}).Where("id = ?", roleId).Updates(updatedRole).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update role."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to update role.")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Role updated successfully"})
+	SendResponse(c, http.StatusOK, 200, nil, "Role updated successfully")
+	return
 }
 
 func DeleteRole(c *gin.Context) {
 	roleId, _ := strconv.Atoi(c.Param("roleId"))
-
 	if err := models.DB.Delete(&models.Role{}, roleId).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete role."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to delete role.")
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Role deleted successfully"})
+	SendResponse(c, http.StatusOK, 200, nil, "Role deleted successfully")
+	return
 }
 
 func GetPermissions(c *gin.Context) {
 	var routes []models.Route
 	if err := models.DB.Find(&routes).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve permissions."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to retrieve permissions.")
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"permissions": routes,
-	})
+	SendResponse(c, http.StatusOK, 200, routes, "Success")
+	return
 }
 
 func AddPermissions(c *gin.Context) {
 	roleId, _ := strconv.Atoi(c.Param("roleId"))
-
-	// Assume that the front-end sends the permissions as an array of route IDs.
 	var routeIds []int
 	if err := c.BindJSON(&routeIds); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		SendResponse(c, http.StatusBadRequest, 400, nil, err.Error())
 		return
 	}
-
-	// For simplicity, we'll use the roleId and routeId to form a permission string and add to the casbin_rule table.
 	for _, routeId := range routeIds {
 		permission := fmt.Sprintf("role_%d_route_%d", roleId, routeId)
 		rule := models.CasbinRule{
@@ -131,24 +121,20 @@ func AddPermissions(c *gin.Context) {
 			V1:    permission,
 		}
 		if err := models.DB.Create(&rule).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add permission."})
+			SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to add permission.")
 			return
 		}
 	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Permissions added successfully"})
+	SendResponse(c, http.StatusOK, 200, nil, "Permissions added successfully")
+	return
 }
 
 func GetRolePermissions(c *gin.Context) {
 	roleId, _ := strconv.Atoi(c.Param("roleId"))
-
 	var rules []models.CasbinRule
 	if err := models.DB.Where("v0 = ?", strconv.Itoa(roleId)).Find(&rules).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve role permissions."})
+		SendResponse(c, http.StatusInternalServerError, 500, nil, "Failed to retrieve role permissions.")
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"permissions": rules,
-	})
+	SendResponse(c, http.StatusOK, 200, rules, "Success")
 }

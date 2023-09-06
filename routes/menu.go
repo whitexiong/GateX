@@ -7,14 +7,13 @@ import (
 )
 
 func SetupMenuRoutes(r *gin.Engine) {
-	menuGroup := r.Group("/menu")
+	group := r.Group("/menu")
 
-	menuGroup.Use(middleware.InitJWTMiddleware())
+	group.Use(middleware.InitJWTMiddleware())
 
-	menuGroup.GET("list", handlers.GetAllMenus)
-	//menuGroup.POST("/", handlers.CreateMenu)
-	//menuGroup.GET("/:id", handlers.GetMenu)
-	//menuGroup.PUT("/:id", handlers.UpdateMenu)
-	//menuGroup.DELETE("/:id", handler/s.DeleteMenu)
-
+	group.GET("list", handlers.GetAllMenus)
+	group.POST("add", handlers.CreateMenu)
+	group.GET("detail/:id", handlers.GetMenu)
+	group.POST("update/:id", handlers.UpdateMenu)
+	group.GET("delete/:id", handlers.DeleteMenu)
 }

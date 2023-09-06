@@ -64,7 +64,6 @@
                   :active-value="1"
                   :inactive-value="0"
               ></el-switch>
-
             </el-form-item>
 
           </el-form>
@@ -73,7 +72,7 @@
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="Routes" row-key="id" lazy :load="loadRoutes" style="width: 1980px; height: 1000px" border>
+    <el-table :data="Routes" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>
 
       <el-table-column label="节点">
         <template #default="scope">
@@ -105,7 +104,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { getList, add, deletedById, update, detail } from '@/services/routeService';
 import { Plus, Refresh, RefreshRight, Search } from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
@@ -123,7 +122,6 @@ export default {
       Path: null,
     };
 
-    // 定义API方法
     const apiMethods = {
       getList,
       add,
@@ -132,13 +130,10 @@ export default {
       deletedById
     };
 
-    // 使用useCRUD抽象
     const {
       data: Routes,
       selected: Route,
-      isLoading,
       dialogVisible,
-      isEditing,
       searchText,
       currentPage,
       pageSize,
@@ -150,7 +145,7 @@ export default {
       deleted,
       resetData,
       dialogTitle,
-      loadRoutes,
+      loadTree,
       handlePageChange,
       toggleStatus
     } = useCRUD(apiMethods, initialRoute);
@@ -184,15 +179,15 @@ export default {
 
     onMounted(async () => {
       await listData();
-      RouteOptions.value = Routes.value.map(Route => transformRouteToCascader(Route));
+      if (Routes.value) {
+        RouteOptions.value = Routes.value.map(Route => transformRouteToCascader(Route));
+      }
     });
 
     return {
       Routes,
       Route,
-      isLoading,
       dialogVisible,
-      isEditing,
       searchText,
       currentPage,
       pageSize,
@@ -206,7 +201,7 @@ export default {
       RouteOptions,
       onRouteSelected,
       anyProps,
-      loadRoutes,
+      loadTree,
       toggleStatus,
       addNew,
       getDetail,

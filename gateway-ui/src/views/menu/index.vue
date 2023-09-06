@@ -9,7 +9,7 @@
             v-model="searchText"
             placeholder="请输入菜单名称"
             style="width: 200px;"
-            @keyup.enter="fetchMenus">
+            @keyup.enter="getList">
           <template #append>
             <el-button @click="fetchMenus" style="margin-right: 5px;">
               <el-icon><Search /></el-icon>
@@ -32,28 +32,31 @@
         </el-button>
         <ADialog
             v-model="dialogVisible"
-            title="新增菜单"
-            @confirm="handleAddMenu"
+            :title="dialogTitle"
+            @confirm="saveData"
+            @reset="resetData"
         >
-          <el-form ref="menuForm" :model="menu" label-width="80px" style="width: 100%;">
+          <el-form ref="MenuForm" :model="Menu" label-width="80px" style="width: 100%;">
             <!-- 父菜单 -->
-            <el-form-item label="父菜单">
+            <el-form-item label="上级菜单">
               <el-cascader
-                  v-model="menu.parent_id"
-                  :options="menuOptions"
-                  placeholder="请选择父菜单"
-                  @change="onMenuSelected"
+                  v-model="Menu.ParentID"
+                  :options="options"
+                  placeholder="请选择菜单"
+                  :props="anyProps"
+                  @change="onSelected"
+                  clearable
               ></el-cascader>
             </el-form-item>
 
             <!-- 名称 -->
             <el-form-item label="名称">
-              <el-input v-model="menu.name" placeholder="请输入菜单名称"></el-input>
+              <el-input v-model="Menu.Name" placeholder="请输入菜单名称"></el-input>
             </el-form-item>
 
             <!-- 路径 -->
             <el-form-item label="路径">
-              <el-input v-model="menu.path" placeholder="请输入菜单路径"></el-input>
+              <el-input v-model="Menu.Path" placeholder="请输入菜单路径"></el-input>
             </el-form-item>
 
             <!-- 图标选择 -->
@@ -86,26 +89,23 @@
 
             <!-- 排序 -->
             <el-form-item label="排序">
-              <el-input-number v-model="menu.order" :min="0"></el-input-number>
+              <el-input-number v-model="Menu.Order" :min="0"></el-input-number>
             </el-form-item>
-
 
             <el-form-item label="状态">
               <el-switch
-                  v-model="menu.status"
-                  active-value="1"
-                  inactive-value="0"
+                  v-model="Menu.Status"
+                  :active-value="1"
+                  :inactive-value="0"
               ></el-switch>
             </el-form-item>
           </el-form>
-
-
         </ADialog>
       </div>
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="menus" row-key="id" lazy :load="loadMenus" style="width: 1980px; height: 1000px" border>
+    <el-table :data="Menus" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>
       <el-table-column label="菜单名称">
         <template #default="scope">
           <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
@@ -125,68 +125,115 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="260">
         <template #default="{ row }">
-          <el-button size="mini" @click="toggleStatus(row)">
-            {{ row.Status === 1 ? '禁用' : '开启' }}
-          </el-button>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="操作" width="180">
-        <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">
-            <el-button type="primary" size="small" @click="editMenu(scope.row.id)" style="color: black;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteMenu(scope.row.id)" style="margin-left: 10px; color: black;">删除</el-button>
-          </span>
+          <div style="display: flex; align-items: center;">
+            <el-button size="small" @click="toggleStatus(row)">
+              {{ row.Status === 1 ? '禁用' : '开启' }}
+            </el-button>
+            <el-button type="primary" size="small" @click="getDetail(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
+            <el-button type="danger" size="small" @click="deleted(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
   </div>
 </template>
 
+
 <script>
-import {ref, onMounted, computed} from 'vue';
-import { getAllMenus, deleteMenu } from '@/services/menuService';
+import {ref, onMounted, computed, watch} from 'vue';
+import { getList, detail, add, update, deletedById } from '@/services/menuService';
 import {Plus, Refresh, RefreshRight, Search, Tools} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import * as icons from '@element-plus/icons';
+import {useCRUD} from "@/composables/useCRUD";
 
 export default {
   components: {Tools, Refresh, Search, Plus, RefreshRight,ADialog},
   setup() {
-    const menus = ref([]);
-    const searchText = ref('');
-    const dialogVisible = ref(false);
-    const allIcons = Object.keys(icons);  // 获取所有图标的名字
-
-
+    const selectedIcon = ref("");
     const iconDialogVisible = ref(false);
-    const menuOptions = ref([]);
+    const options = ref([]);
+    const allIcons = Object.keys(icons);  // 获取所有图标的名字
+    const initFormData = {
+        ID: null,
+        Name: null,
+        Icon: null,
+        Path: null,
+        ParentID: null,
+        Order: 0,
+        Status: null,
+    }
 
-    const transformMenuToCascader = (menu) => {
+    const apiMethods = {
+      getList,
+      add,
+      update,
+      detail,
+      deletedById
+    };
+
+    const anyProps = {
+      checkStrictly: true,
+      value: 'value',
+      label: 'label',
+      children: 'children'
+    }
+
+    const {
+      data: Menus,
+      selected: Menu,
+      dialogVisible,
+      searchText,
+      currentPage,
+      loadTree,
+      pageSize,
+      listData,
+      saveData,
+      refresh,
+      addNew,
+      getDetail,
+      deleted,
+      resetData,
+      dialogTitle,
+      handlePageChange,
+      toggleStatus,
+    } = useCRUD(apiMethods, initFormData);
+
+    const transCascader = (Menu) => {
       return {
-        value: menu.id,
-        label: menu.name,
-        children: menu.children && menu.children.length
-            ? menu.children.map(child => transformMenuToCascader(child))
+        value: Menu.value,
+        label: Menu.label,
+        children: Menu.children && Menu.children.length
+            ? Menu.children.map(child => transCascader(child))
             : null
       };
     };
 
-    const onMenuSelected = (value) => {
-      menu.value.parent_id = value[value.length - 1]; // 获取最后一个ID作为parent_id
+    const onSelected = (value) => {
+      if (value && Array.isArray(value) && value.length > 0) {
+        Menu.ParentID = value[value.length - 1];
+      }
+    }
+
+    const selectIcon = (icon) => {
+      displayIcon.value = icon;
+      Menu.value.Icon = icon;
+      console.log(Menu.value.Icon)
     };
 
-
     onMounted(async () => {
-      await fetchMenus();
-      menuOptions.value = menus.value.map(menu => transformMenuToCascader(menu));
+      await listData();
+      if (Menus.value) {
+        options.value = Menus.value.map(Menu => transCascader(Menu));
+      }
     });
 
     const getIconComponent = (icon) => {
       return icons[icon];
     };
+
     const openIconSelector = () => {
       iconDialogVisible.value = true;
     };
@@ -199,122 +246,42 @@ export default {
       }
     });
 
-    const selectIcon = (icon) => {
-      displayIcon.value = icon;
-    };
 
-    const pageSize = ref(10);  // 每页显示的图标数量
-    const currentPage = ref(1); // 当前页数
-
-
-    // 分页的图标列表
     const paginatedIcons = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;
       const end = start + pageSize.value;
       return allIcons.slice(start, end);
     });
 
-    // 分页改变时的处理函数
-    const handlePageChange = (newPage) => {
-      currentPage.value = newPage;
-    };
-
-
-    const selectedIcon = ref("");
-    const menu = ref({
-      name: '',       // 菜单名称
-      icon: '',       // 菜单图标
-      path: '',       // 菜单链接
-      parent_id: null, // 父菜单ID
-      permission: '', // 权限标识
-      order: 999      // 排序，默认为999
-    });
-    const handleAddMenu = () => {
-      console.log('Menu data:', menu.value);
-    };
-
-
-    const loadMenus = async (row, treeNode, resolve) => {
-      if (row.children && row.children.length > 0) {
-        return resolve(row.children);
-      }
-      try {
-        const response = await getAllMenus({ parentId: row.id });
-        const children = Array.isArray(response.data.menus) ? response.data.menus : [];
-        children.forEach(child => {
-          child.hasChildren = child.children && child.children.length > 0;
-          child._indent = (treeNode._indent || 0) + 1; // 记录缩进级别
-        });
-        resolve(children);
-      } catch (error) {
-        console.error("Error loading menus:", error);
-      }
-    };
-
-    const editMenu = (id) => {
-      // 编辑逻辑
-    };
-
-    const addNew = () => {
-      dialogVisible.value = true;
-    };
-
-    const deleteMenu = async (id) => {
-      try {
-        await deleteMenu(id);
-        await fetchMenus();
-      } catch (error) {
-        console.error("Error deleting menu:", error);
-      }
-    };
-
-    const fetchMenus = async () => {
-      try {
-        const response = await getAllMenus({ parentId: 0, name: searchText.value });
-        const fetchedMenus = Array.isArray(response.data.menus) ? response.data.menus : [];
-        fetchedMenus.forEach(menu => {
-          menu.hasChildren = menu.children && menu.children.length > 0;
-          menu._indent = 0; // 顶级菜单缩进为0
-        });
-        menus.value = fetchedMenus;
-      } catch (error) {
-        console.error("Error fetching menus:", error);
-      }
-    };
-
-    const refresh = () => {
-      searchText.value = '';  // 清空搜索内容
-      fetchMenus();           // 重新加载菜单
-    };
-
-    onMounted(fetchMenus);
-
     return {
-      menus,
+      Menus,
+      Menu,
       searchText,
-      loadMenus,
-      editMenu,
-      deleteMenu,
-      fetchMenus,
       refresh,
       addNew,
-      menu,
       dialogVisible,
-      handleAddMenu,
       iconDialogVisible,
-      openIconSelector,
       icons,
-      selectIcon,
-      getIconComponent,
       allIcons,
-      paginatedIcons,
       currentPage,
       handlePageChange,
       selectedIcon,
       pageSize,
+      onSelected,
+      getIconComponent,
+      openIconSelector,
+      paginatedIcons,
       displayIcon,
-      menuOptions,        // 新增属性
-      onMenuSelected      // 新增方法
+      anyProps,
+      selectIcon,
+      options,
+      dialogTitle,
+      saveData,
+      resetData,
+      deleted,
+      getDetail,
+      toggleStatus,
+      loadTree,
     };
   }
 };
