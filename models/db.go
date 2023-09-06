@@ -15,10 +15,8 @@ func InitDatabase() error {
 
 	// 自动迁移模型，确保模型与数据库表结构保持同步
 	err = DB.AutoMigrate(
-		&RolePolicy{},
 		&User{},
 		&Role{},
-		&Policy{},
 		&JwtToken{},
 		&UserRole{},
 		&APIEndpoint{},

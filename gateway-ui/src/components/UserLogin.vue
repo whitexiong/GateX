@@ -21,7 +21,7 @@
 
 <script>
 import { ref } from "vue";
-import { UserLogin } from "@/services/api";
+import { UserLogin } from "@/services/userService";
 import { useRouter } from 'vue-router';
 
 export default {

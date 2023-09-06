@@ -28,12 +28,12 @@ const routes = [
             },
             {
                 path: 'menu',
-                component: MenuManagement,  // Placeholder, might not display anything or act as a layout
+                component: MenuManagement,
                 children: [
                     {
                         path: 'index',
                         name: 'MenuIndex',
-                        component: MenuManagement,  // Main list view
+                        component: MenuManagement,
                         meta: {
                             requiresAuth: true
                         }
@@ -81,7 +81,21 @@ const routes = [
                         }
                     }
                 ]
-            }
+            },
+            {
+                path: 'user',
+                component: route,
+                children: [
+                    {
+                        path: 'index',
+                        name: 'UserIndex',
+                        component: route,
+                        meta: {
+                            requiresAuth: true
+                        }
+                    }
+                ]
+            },
         ]
     },
 ];

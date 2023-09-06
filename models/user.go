@@ -14,7 +14,6 @@ type User struct {
 	Status    int8       `gorm:"type:tinyint"`
 	Roles     []*Role    `gorm:"many2many:user_roles"`
 	JwtTokens []JwtToken `gorm:"foreignKey:UserID"`
-	Policies  []Policy   `gorm:"many2many:user_policies"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

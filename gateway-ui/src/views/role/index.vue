@@ -43,23 +43,26 @@
         <!-- 新增角色对话框 -->
         <ADialog
             v-model="dialogVisible"
-            title="新增角色"
-            @confirm="handleAddRole">
-          <el-form ref="roleForm" :model="role" label-width="100px">
+            :title="dialogTitle"
+            @confirm="saveData"
+            @reset="resetData"
+            @close="closeRole"
+        >
+          <el-form ref="roleForm" :model="Role" label-width="80px" style="width: 100%;">
             <!-- 名称 -->
             <el-form-item label="名称">
-              <el-input v-model="role.Name" placeholder="请输入角色名称"></el-input>
+              <el-input v-model="Role.Name" placeholder="请输入角色名称"></el-input>
             </el-form-item>
             <!-- 备注 -->
             <el-form-item label="备注">
-              <el-input v-model="role.Remark" type="textarea"/>
+              <el-input v-model="Role.Remark" type="textarea"/>
             </el-form-item>
             <!-- 状态 -->
             <el-form-item label="状态">
               <el-switch
-                  v-model="role.Status"
-                  active-value="1"
-                  inactive-value="0"
+                  v-model="Role.Status"
+                  :active-value="1"
+                  :inactive-value="0"
               ></el-switch>
             </el-form-item>
             <el-form-item label="选择权限">
@@ -72,6 +75,7 @@
                   highlight-current
                   v-model="selectedPermissions"
                   @check="getSelectedPermissions"
+                  :default-checked-keys="Role.Permissions"
               />
             </el-form-item>
 
@@ -81,7 +85,7 @@
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="roles" row-key="ID" style="width: 1980px; height: 1000px" border>
+    <el-table :data="Roles" row-key="ID" style="width: 1980px; height: 1000px" border>
       <el-table-column label="角色名称" prop="Name"></el-table-column>
       <el-table-column label="备注" prop="Remark"></el-table-column>
       <el-table-column label="状态">
@@ -96,129 +100,108 @@
             <el-button size="small" @click="toggleStatus(row)">
               {{ row.Status === 1 ? '禁用' : '开启' }}
             </el-button>
-            <el-button type="primary" size="small" @click="editRoute(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteRoute(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
+            <el-button type="primary" size="small" @click="getDetail(row.ID)" style="color: black; margin-left: 5px;">编辑</el-button>
+            <el-button type="danger" size="small" @click="deleted(row.ID)" style="color: black; margin-left: 10px;">删除</el-button>
           </div>
         </template>
       </el-table-column>
-
     </el-table>
   </div>
 </template>
 
 <script>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, watch} from 'vue';
 import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
-import {getList, add, getPermissionsFromAPI, addRoleWithPermissions} from "@/services/RoleService";
+import {getList, detail, add, update, getPermissions} from '@/services/roleService';
+import {useCRUD} from "@/composables/useCRUD";
 
 export default {
   components: {Refresh, Search, Plus, RefreshRight, ADialog},
   setup() {
-    const roles = ref([]);
-    const searchText = ref('');
-    const dialogVisible = ref(false);
-
     const allPermissions = ref([]); // 所有的权限
     const selectedPermissions = ref([]); // 选中的权限
     const treeRef = ref(null);
+    const initFormData = {
+      ID: null,
+      Name: '',
+      Remark: '',
+      Status: 1,
+      Permissions:[],
+    }
+
+    const apiMethods = {
+      getList,
+      add,
+      update,
+      detail,
+    };
+
+
+    const {
+      data: Roles,
+      selected: Role,
+      dialogVisible,
+      searchText,
+      currentPage,
+      pageSize,
+      listData,
+      saveData,
+      refresh,
+      addNew,
+      getDetail,
+      deleted,
+      resetData,
+      dialogTitle,
+      handlePageChange,
+      toggleStatus,
+    } = useCRUD(apiMethods, initFormData);
 
     // 假设你有一个服务或API来获取所有的权限列表
     const fetchAllPermissions = async () => {
-      const response = await getPermissionsFromAPI();
-      if (response.data.routes) {
-        allPermissions.value = response.data.routes;
+      const response = await getPermissions();
+      if (response.data) {
+        allPermissions.value = response.data;
       }
     };
 
     const getSelectedPermissions = () => {
       if (treeRef.value) {
         const checkedKeys = treeRef.value.getCheckedKeys();
-        console.log("选中的权限：" + checkedKeys);
+        Role.value.Permissions = checkedKeys
       }
     }
 
-    const handleAddRole = async () => {
-
-      role.value.Status = parseInt(role.value.Status);
-      const response = await addRoleWithPermissions(role.value, treeRef.value.getCheckedKeys());
-
-      if (response.success) {
-        // 成功后关闭弹窗并刷新角色列表
-        dialogVisible.value = false;
-        await fetchRoles();
-      } else {
-        console.error("Error adding role:", response.message);
-      }
-    };
-
     onMounted(async () => {
-      await fetchRoles();
+      await listData();
       await fetchAllPermissions();
     });
 
-    const role = ref({
-      Name: '',       // 角色名称
-      Remark: '',     // 备注
-      Status: null       // 默认状态为1（开启）
-    });
-
-    // 切换角色状态
-    const toggleStatus = async (roleItem) => {
-      // 这里你可以调用后端API来更改状态
-      roleItem.Status = roleItem.Status === 1 ? 0 : 1;
-
-      // 调用API更新状态
-      // await yourApiFunctionToUpdateStatus(roleItem.ID, roleItem.Status);
-      await fetchRoles();
-    };
-
-    const fetchRoles = async () => {
-      const response = await getList({name: searchText.value});
-      roles.value = response.data.roles;
-    };
-
-    const refresh = () => {
-      searchText.value = '';  // 清空搜索内容
-      fetchRoles();           // 重新加载角色
-    };
-
-    const addNew = () => {
-      dialogVisible.value = true;
-    };
-
-    const editRole = (id) => {
-      // Edit logic
-    };
-
-    const deleteRole = async (id) => {
-      // Delete logic
-    };
-
-    const resetSearch = () => {
-      searchText.value = '';
-      fetchRoles();
-    };
-
-    onMounted(fetchRoles);
+    const closeRole = () => {
+      treeRef.value.setCheckedKeys([], false)
+    }
 
     return {
-      roles,
+      Roles,
+      Role,
       searchText,
-      fetchRoles,
       refresh,
       addNew,
-      role,
       dialogVisible,
-      handleAddRole,
-      editRole,
-      deleteRole,
-      resetSearch,
       toggleStatus,
       allPermissions,
       selectedPermissions,
       treeRef,
-      getSelectedPermissions
+      getSelectedPermissions,
+      currentPage,
+      pageSize,
+      saveData,
+      getDetail,
+      deleted,
+      resetData,
+      dialogTitle,
+      handlePageChange,
+      closeRole
     };
   },
 };
@@ -241,7 +224,5 @@ export default {
 .table-button-danger {
   color: black; /* 你可以根据需要为特定的按钮设置特定的颜色 */
 }
-
-
 
 </style>

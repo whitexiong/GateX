@@ -142,7 +142,7 @@
 
 
 <script>
-import {ref, onMounted, computed, watch} from 'vue';
+import {ref, onMounted, computed} from 'vue';
 import { getList, detail, add, update, deletedById } from '@/services/menuService';
 import {Plus, Refresh, RefreshRight, Search, Tools} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
@@ -245,7 +245,6 @@ export default {
         iconDialogVisible.value = false;
       }
     });
-
 
     const paginatedIcons = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;

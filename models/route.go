@@ -13,8 +13,3 @@ type Route struct {
 	CreatedAt time.Time `gorm:"comment:'创建时间'"`
 	UpdatedAt time.Time `gorm:"comment:'更新时间'"`
 }
-
-type RoleRequest struct {
-	Role
-	Permissions []uint
-}

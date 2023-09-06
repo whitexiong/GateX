@@ -66,7 +66,7 @@
 
       <!-- 用户管理 -->
       <el-menu-item index="8-1">
-        <router-link to="/users">用户管理</router-link>
+        <router-link to="/user">用户管理</router-link>
       </el-menu-item>
 
       <!-- 角色管理 -->

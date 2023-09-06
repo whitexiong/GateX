@@ -11,8 +11,8 @@
 </template>
 
 <script>
-import { getDashboardData } from '@/services/api';
-import ATable from "@/components/ATable.vue"; // 根据你的文件结构调整路径
+import { getDashboardData } from '@/services/userService';
+import ATable from "@/components/ATable.vue";
 
 export default {
   name: 'UserDashboard',

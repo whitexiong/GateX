@@ -20,9 +20,6 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 
 	enforcer, err := casbin.NewEnforcer("config/model.conf", adapter)
 
-	policies := enforcer.GetPolicy()
-	log.Println("策略:", policies)
-
 	if err != nil {
 		log.Fatalf("Failed to initialize casbin with GORM adapter: %v", err)
 		return nil

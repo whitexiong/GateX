@@ -36,7 +36,7 @@ const handleSelect = (key, keyPath) => {
 </script>
 
 <script>
-import { UserLogout } from '@/services/api';
+import { UserLogout } from '@/services/userService';
 import router from "@/router";
 import { ElMessageBox } from 'element-plus';
 
