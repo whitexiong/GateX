@@ -73,9 +73,9 @@
                   default-expand-all
                   node-key="id"
                   highlight-current
-                  v-model="selectedPermissions"
-                  @check="getSelectedPermissions"
                   :default-checked-keys="Role.Permissions"
+                  :check-strictly="true"
+                  @check="getSelectedPermissions"
               />
             </el-form-item>
 
@@ -101,7 +101,7 @@
               {{ row.Status === 1 ? '禁用' : '开启' }}
             </el-button>
             <el-button type="primary" size="small" @click="getDetail(row.ID)" style="color: black; margin-left: 5px;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleted(row.ID)" style="color: black; margin-left: 10px;">删除</el-button>
+            <el-button type="danger" size="small" @click="deletedRole(row.ID)" style="color: black; margin-left: 10px;">删除</el-button>
           </div>
         </template>
       </el-table-column>
@@ -110,10 +110,10 @@
 </template>
 
 <script>
-import {ref, onMounted, watch} from 'vue';
+import {ref, onMounted} from 'vue';
 import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
-import {getList, detail, add, update, getPermissions} from '@/services/roleService';
+import {getList, detail, add, update, getPermissions, deletedRole} from '@/services/roleService';
 import {useCRUD} from "@/composables/useCRUD";
 
 export default {
@@ -135,8 +135,8 @@ export default {
       add,
       update,
       detail,
+      deleted: deletedRole
     };
-
 
     const {
       data: Roles,
@@ -150,7 +150,6 @@ export default {
       refresh,
       addNew,
       getDetail,
-      deleted,
       resetData,
       dialogTitle,
       handlePageChange,
@@ -165,12 +164,13 @@ export default {
       }
     };
 
-    const getSelectedPermissions = () => {
-      if (treeRef.value) {
-        const checkedKeys = treeRef.value.getCheckedKeys();
-        Role.value.Permissions = checkedKeys
-      }
+
+    const getSelectedPermissions = (checkedNodes, { checkedKeys, halfCheckedKeys }) => {
+      const allSelectedKeys = [...checkedKeys]; // 只考虑完全选中的节点
+      Role.value.Permissions = allSelectedKeys;
+      console.log(allSelectedKeys);
     }
+
 
     onMounted(async () => {
       await listData();
@@ -197,11 +197,11 @@ export default {
       pageSize,
       saveData,
       getDetail,
-      deleted,
       resetData,
       dialogTitle,
       handlePageChange,
-      closeRole
+      closeRole,
+      deletedRole
     };
   },
 };

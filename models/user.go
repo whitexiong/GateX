@@ -28,3 +28,8 @@ func FindUserByUsername(username string) (*User, error) {
 	}
 	return &user, nil
 }
+
+type UserRequest struct {
+	User
+	Roles []uint `json:"Roles"`
+}

@@ -15,4 +15,5 @@ func SetupUserRoutes(r *gin.Engine) {
 	group.GET("detail/:id", handlers.GetUserDetail)
 	group.POST("update/:id", handlers.UpdateUser)
 	group.GET("delete/:id", handlers.DeleteUser)
+	group.GET("menus", handlers.GetUserMenus)
 }

@@ -12,6 +12,7 @@ type Menu struct {
 	Icon      string `gorm:"size:50"`
 	Order     int    `gorm:"default:999"`
 	Status    int8   `gorm:"type:tinyint"`
+	RouteID   uint   `gorm:"index:idx_route_id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

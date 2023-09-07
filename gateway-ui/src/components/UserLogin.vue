@@ -1,7 +1,7 @@
 <template>
   <div class="user-login-container">
     <div class="login-box">
-      <h2 class="mb-8 text-center">GO GATEWAY</h2>
+      <h2 class="mb-8 text-center">GATE</h2>
       <el-form :model="loginForm" @submit.prevent="handleLogin" class="space-y-4">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="loginForm.username"></el-input>
@@ -20,12 +20,13 @@
 </template>
 
 <script>
-import { ref } from "vue";
-import { UserLogin } from "@/services/userService";
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
+import { UserLogin, GetUserMenus } from "@/services/userService";
+import {useRouter} from "vue-router";
 
 export default {
   name: "UserLogin",
+
   setup() {
     const loginForm = ref({
       username: "",
@@ -33,20 +34,36 @@ export default {
     });
 
     const errorMsg = ref("");
-    const router = useRouter(); // 获取 router 实例
+    const router = useRouter();
+
+    const fetchAndStoreMenus = async () => {
+      try {
+        const menuResponse = await GetUserMenus();
+        if (menuResponse && menuResponse.data) {
+          localStorage.setItem('userMenus', JSON.stringify(menuResponse.data));
+        }
+      } catch (error) {
+        console.error("Failed to fetch menus:", error);
+      }
+    }
 
     const handleLogin = async () => {
       try {
         const response = await UserLogin(loginForm.value.username, loginForm.value.password);
         if (response && response.data.token) {
+          // 存储token
           localStorage.setItem('token', response.data.token);
+
+          // 请求并存储用户的菜单数据
+          await fetchAndStoreMenus();
+
+          // 导航到Dashboard
           await router.push({name: 'Dashboard'});
         } else {
-          console.log(response.data.token)
-          errorMsg.value = "登录失败" + response.data.msg;
+          errorMsg.value = "登录失败: " + response.data.msg;
         }
       } catch (error) {
-        errorMsg.value = "登录失败, 跳转失败";
+        errorMsg.value = "登录失败，请联系管理员!";
       }
     };
 

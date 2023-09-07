@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"gateway/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 // 获取所有菜单
@@ -109,4 +111,67 @@ func ConvertMenusToTree(menus []models.Menu) []map[string]interface{} {
 	}
 
 	return transformedMenus
+}
+
+func GetUserMenus(c *gin.Context) {
+	// 获取用户名从 JWT 中
+	roleName, exists := c.Get("role")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username not found in token"})
+		return
+	}
+
+	// 如果是 root 用户，直接返回所有菜单项
+	if roleName == "root" {
+		var allMenus []models.Menu
+		if err := models.DB.Find(&allMenus).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve all menus for root"})
+			return
+		}
+		transformedMenus := ConvertMenusToTree(allMenus)
+		SendResponse(c, http.StatusOK, 200, transformedMenus, "Success")
+		return
+	}
+
+	// 获取用户ID从 JWT 中
+	role, _ := c.Get("role")
+	if role == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "role not found in token"})
+		return
+	}
+
+	// 使用用户ID获取菜单
+	menus, err := fetchUserMenus(fmt.Sprintf("%v", role))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve menus"})
+		return
+	}
+
+	// 转换菜单列表为树形结构
+	transformedMenus := ConvertMenusToTree(menus)
+	SendResponse(c, http.StatusOK, 200, transformedMenus, "Success")
+}
+
+func fetchUserMenus(roleName string) ([]models.Menu, error) {
+	// 1. 通过用户ID查询用户的所有角色
+	var casbinRules []models.CasbinRule
+	if err := models.DB.Where("v0 = ?", roleName).Find(&casbinRules).Error; err != nil {
+		return nil, err
+	}
+
+	var routeIds []uint
+	for _, cr := range casbinRules {
+		routeId, _ := strconv.ParseUint(cr.V3, 10, 32)
+		routeIds = append(routeIds, uint(routeId))
+	}
+
+	// 3. 根据路由ID从Menu表中查询出用户具有权限访问的所有菜单项
+	var menus []models.Menu
+	if err := models.DB.Where("route_id IN ?", routeIds).Find(&menus).Error; err != nil {
+		return nil, err
+	}
+
+	fmt.Println("routids:", routeIds)
+	fmt.Println("menus:", menus)
+	return menus, nil
 }

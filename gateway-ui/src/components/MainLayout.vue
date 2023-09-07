@@ -4,7 +4,7 @@
       <SideBarMenu class="sidebar" :isCollapse="isCollapse" />
       <el-container>
         <el-header>
-          <NavBar @toggle-sidebar="toggleSidebar"  class="navbar" />
+          <NavBar @toggle-sidebar="toggleSidebar" :isCollapse="isCollapse" class="navbar" />
         </el-header>
         <BreadcrumbNav />
         <el-main>

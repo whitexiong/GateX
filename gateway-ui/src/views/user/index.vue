@@ -5,15 +5,19 @@
       <div style="display: flex; align-items: center;">
         <el-input
             v-model="searchText"
-            placeholder="请输入节点名称"
+            placeholder="请输入用户名"
             style="width: 200px;"
             @keyup.enter="listData">
           <template #append>
             <el-button @click="listData" style="margin-right: 5px;">
-              <el-icon><Search /></el-icon>
+              <el-icon>
+                <Search/>
+              </el-icon>
             </el-button>
             <el-button @click="resetSearch">
-              <el-icon><Refresh /></el-icon>
+              <el-icon>
+                <Refresh/>
+              </el-icon>
             </el-button>
           </template>
         </el-input>
@@ -21,11 +25,16 @@
 
       <div style="display: flex; align-items: center;">
         <el-button @click="refresh">
-          <el-icon><RefreshRight /></el-icon>
+          <el-icon>
+            <RefreshRight/>
+          </el-icon>
         </el-button>
 
         <el-button @click="addNew" style="margin-left: 10px;">
-          <el-icon><Plus /></el-icon>新增
+          <el-icon>
+            <Plus/>
+          </el-icon>
+          新增用户
         </el-button>
         <ADialog
             v-model="dialogVisible"
@@ -33,185 +42,144 @@
             @confirm="saveData"
             @reset="resetData"
         >
-          <el-form ref="RouteForm" :model="Route" label-width="80px" style="width: 100%;">
-            <el-form-item label="上级节点" style="width: 100%;">
-              <el-cascader
-                  v-model="Route.ParentID"
-                  :options="RouteOptions"
-                  :props="anyProps"
-                  placeholder="节点名称"
-                  @change="onRouteSelected"
-                  clearable
-                  style="width: 100%;"
-              ></el-cascader>
-
+          <el-form ref="UserForm" :model="User" label-width="80px" style="width: 100%;">
+            <el-form-item label="用户名">
+              <el-input v-model="User.Username" placeholder="请输入用户名"></el-input>
             </el-form-item>
 
-            <!-- 名称 -->
-            <el-form-item label="节点">
-              <el-input v-model="Route.Name" placeholder="请输入名称"></el-input>
+            <el-form-item label="密码">
+              <el-input
+                  v-model="User.Password"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="请输入密码"
+                  suffix-icon="el-icon-view"
+                  @click:append="togglePasswordVisibility">
+              </el-input>
             </el-form-item>
 
-            <!-- 路径 -->
-            <el-form-item label="路径">
-              <el-input v-model="Route.Path" placeholder="请输入路径"></el-input>
+            <el-form-item label="邮箱">
+              <el-input v-model="User.Email" placeholder="请输入邮箱"></el-input>
             </el-form-item>
-
-            <!-- 状态 -->
             <el-form-item label="状态">
-              <el-switch
-                  v-model="Route.Status"
-                  :active-value="1"
-                  :inactive-value="0"
-              ></el-switch>
+              <el-switch v-model="User.Status" :active-value="1" :inactive-value="0"></el-switch>
             </el-form-item>
-
+            <el-form-item label="角色">
+              <el-select v-model="User.Roles" multiple placeholder="请选择角色">
+                <el-option
+                    v-for="role in allRoles"
+                    :key="role.ID"
+                    :label="role.Name"
+                    :value="role.ID">
+                </el-option>
+              </el-select>
+            </el-form-item>
           </el-form>
         </ADialog>
       </div>
     </div>
 
-    <!-- 表格区域 -->
-    <el-table :data="Routes" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>
-
-      <el-table-column label="节点">
+    <!-- 用户表格区域 -->
+    <el-table :data="Users"  row-key="ID" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>>
+      <el-table-column label="用户名" prop="Username"></el-table-column>
+      <el-table-column label="邮箱" prop="Email"></el-table-column>
+      <el-table-column label="状态" width="100">
         <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.path }}</span>
+          <span>{{ scope.row.Status === 1 ? '启用' : '禁用' }}</span>
         </template>
       </el-table-column>
-
-      <!-- 节点名称列 -->
-      <el-table-column label="路由名称">
+      <el-table-column label="角色" width="200">
         <template #default="scope">
-          <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
+          <span>{{ scope.row.Roles.map(role => role.Name).join(', ') }}</span>
         </template>
       </el-table-column>
-
       <el-table-column label="操作" width="260">
         <template #default="{ row }">
           <div style="display: flex; align-items: center;">
-            <el-button size="small" @click="toggleStatus(row)">
-              {{ row.Status === 1 ? '禁用' : '开启' }}
+            <el-button type="primary" size="small" @click="getDetail(row.ID)" style="color: black; margin-left: 5px;">
+              编辑
             </el-button>
-            <el-button type="primary" size="small" @click="getDetail(row.id)" style="color: black; margin-left: 5px;">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleted(row.id)" style="color: black; margin-left: 10px;">删除</el-button>
+            <el-button type="danger" size="small" @click="deleteUser(row.ID)" style="color: black; margin-left: 10px;">
+              删除
+            </el-button>
           </div>
         </template>
       </el-table-column>
     </el-table>
-
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { getList, add, deletedById, update, detail } from '@/services/routeService';
-import { Plus, Refresh, RefreshRight, Search } from "@element-plus/icons-vue";
+import {ref, onMounted} from 'vue';
+import {getList as getRoleList} from '@/services/roleService';
+import {getList as getUserList, add, update, detail, deletedById} from '@/services/userService';
+import {Plus, Refresh, RefreshRight, Search} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
-import * as icons from '@element-plus/icons';
-import { useCRUD } from '@/composables/useCRUD';
+import {useCRUD} from '@/composables/useCRUD';
 
 export default {
-  components: { Refresh, Search, Plus, RefreshRight, ADialog },
+  components: {Refresh, Search, Plus, RefreshRight, ADialog},
   setup() {
-    const initialRoute = {
+    const initialUser = {
       ID: null,
-      Name: '',
+      Username: '',
+      Email: '',
+      Password: '',
       Status: null,
-      ParentID: null,
-      Path: null,
+      Roles: []
     };
 
     const apiMethods = {
-      getList,
-      add,
-      update,
-      detail,
-      deletedById
+      getList: getUserList,
+      add: add,
+      update: update,
+      detail: detail,
+      deletedById: deletedById
     };
 
     const {
-      data: Routes,
-      selected: Route,
+      data: Users,
+      selected: User,
       dialogVisible,
       searchText,
-      currentPage,
-      pageSize,
       listData,
       saveData,
       refresh,
       addNew,
       getDetail,
-      deleted,
+      deleted: deleteUser,
       resetData,
-      dialogTitle,
-      loadTree,
-      handlePageChange,
-      toggleStatus
-    } = useCRUD(apiMethods, initialRoute);
+      dialogTitle
+    } = useCRUD(apiMethods, initialUser);
 
-    const allIcons = Object.keys(icons);
-    const selectedIcon = ref("");
-    const iconDialogVisible = ref(false);
-    const RouteOptions = ref([]);
-    const anyProps = {
-      checkStrictly: true,
-      value: 'value',
-      label: 'label',
-      children: 'children'
-    }
-
-    const transformRouteToCascader = (Route) => {
-      return {
-        value: Route.id,
-        label: Route.name,
-        children: Route.children && Route.children.length
-            ? Route.children.map(child => transformRouteToCascader(child))
-            : null
-      };
-    };
-
-    const onRouteSelected = (value) => {
-      if (value && Array.isArray(value) && value.length > 0) {
-        Route.ParentID = value[value.length - 1];
-      }
-    };
+    const allRoles = ref([]);
 
     onMounted(async () => {
       await listData();
-      if (Routes.value) {
-        RouteOptions.value = Routes.value.map(Route => transformRouteToCascader(Route));
+      const rolesResponse = await getRoleList();
+      if (rolesResponse.data) {
+        allRoles.value = rolesResponse.data;
       }
     });
 
     return {
-      Routes,
-      Route,
+      Users,
+      User,
+      allRoles,
       dialogVisible,
       searchText,
-      currentPage,
-      pageSize,
       listData,
       saveData,
       refresh,
-      allIcons,
-      selectedIcon,
-      iconDialogVisible,
-      handlePageChange,
-      RouteOptions,
-      onRouteSelected,
-      anyProps,
-      loadTree,
-      toggleStatus,
       addNew,
       getDetail,
-      deleted,
+      deleteUser,
       resetData,
       dialogTitle
     };
   }
 };
 </script>
+
 
 <style scoped>
 

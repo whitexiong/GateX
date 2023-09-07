@@ -19,7 +19,7 @@ export const update = (id, roleData) => {
     return axios.post(`${BASE_URL}/role/update/${id}`, roleData);
 }
 
-export const deleteRole = (id) => {
+export const deletedRole = (id) => {
     return axios.delete(`${BASE_URL}/role/delete/${id}`);
 }
 

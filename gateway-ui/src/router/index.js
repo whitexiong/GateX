@@ -5,7 +5,8 @@ import UserLogin from '@/components/UserLogin.vue';
 import MenuManagement from '@/views/menu/index.vue';
 import policy from '@/views/policy/index.vue';
 import role from '@/views/role/index.vue';
-import route from '@/views/route/index.vue'
+import route from '@/views/route/index.vue';
+import user from '@/views/user/index.vue';
 import axios from "axios";
 
 const routes = [
@@ -84,12 +85,12 @@ const routes = [
             },
             {
                 path: 'user',
-                component: route,
+                component: user,
                 children: [
                     {
                         path: 'index',
                         name: 'UserIndex',
-                        component: route,
+                        component: user,
                         meta: {
                             requiresAuth: true
                         }
@@ -137,7 +138,6 @@ axios.interceptors.request.use(
         return Promise.reject(error);
     }
 );
-
 
 // 全局响应拦截器
 axios.interceptors.response.use(

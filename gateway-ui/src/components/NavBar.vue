@@ -1,6 +1,5 @@
 <template>
 
-
   <el-menu
       :default-active="activeIndex"
       class="el-menu-demo"
@@ -9,9 +8,7 @@
       @select="handleSelect"
   >
     <el-menu-item index="0" @click="toggleSidebar">
-<!--      <img src="@/assets/logo.png" alt="Logo" class="nav-logo"/>-->
-      <el-icon class="toggle-sidebar-icon nav-logo" :name="isCollapse ? 'el-icon-arrow-right' : 'el-icon-arrow-left'" ><Fold /></el-icon>
-
+      <el-icon class="toggle-sidebar-icon nav-logo" :name="isCollapse ? 'ArrowRight' : 'ArrowLeft'" ><Fold /></el-icon>
     </el-menu-item>
 
     <div class="flex-grow" />
@@ -32,7 +29,6 @@ const handleSelect = (key, keyPath) => {
   console.log(key, keyPath)
 }
 
-
 </script>
 
 <script>
@@ -46,7 +42,13 @@ export default {
     toggleSidebar() {
       this.$emit('toggle-sidebar');
     }
-  }
+  },
+  props: {
+    isCollapse: {
+      type: Boolean,
+      required: true
+    }
+  },
 }
 
 const logout = () => {
@@ -58,7 +60,7 @@ const logout = () => {
     try {
       await UserLogout();
       localStorage.removeItem('token');
-      router.push('/login');
+      await router.push('/login');
     } catch (error) {
       console.error("退出登录失败：", error);
     }
