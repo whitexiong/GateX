@@ -1,5 +1,4 @@
 <template>
-
   <el-menu
       :default-active="activeIndex"
       class="el-menu-demo"
@@ -7,23 +6,28 @@
       :ellipsis="false"
       @select="handleSelect"
   >
+
     <el-menu-item index="0" @click="toggleSidebar">
       <el-icon class="toggle-sidebar-icon nav-logo" :name="isCollapse ? 'ArrowRight' : 'ArrowLeft'" ><Fold /></el-icon>
     </el-menu-item>
 
+
     <div class="flex-grow" />
     <el-sub-menu index="2">
-      <template #title>超级管理员</template>
+      <template #title>{{ username }}</template>
       <el-menu-item index="2-1">修改密码</el-menu-item>
       <el-menu-item index="2-2" @click="logout">退出登录</el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>
+
 <script setup>
 import { ref } from 'vue'
-import {Fold} from "@element-plus/icons-vue";
+import { Fold } from "@element-plus/icons-vue";
 
 const activeIndex = ref('1')
+const userData = ref(JSON.parse(localStorage.getItem('userData')))
+const username = userData.value ? userData.value.username : '未登录'
 
 const handleSelect = (key, keyPath) => {
   console.log(key, keyPath)
@@ -35,7 +39,6 @@ const handleSelect = (key, keyPath) => {
 import { UserLogout } from '@/services/userService';
 import router from "@/router";
 import { ElMessageBox } from 'element-plus';
-
 
 export default {
   methods: {
@@ -60,6 +63,7 @@ const logout = () => {
     try {
       await UserLogout();
       localStorage.removeItem('token');
+      localStorage.removeItem('userData'); // 退出时删除用户数据
       await router.push('/login');
     } catch (error) {
       console.error("退出登录失败：", error);

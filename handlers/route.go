@@ -4,6 +4,7 @@ import (
 	"gateway/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 func GetAllRoutes(c *gin.Context) {
@@ -123,4 +124,27 @@ func DeleteRoute(c *gin.Context) {
 	}
 
 	SendResponse(c, http.StatusOK, 200, nil, "Route entry deleted successfully")
+}
+
+func GetRoutePathList(c *gin.Context) {
+	queryString := c.DefaultQuery("path", "")
+
+	var routes []models.Route
+	result := models.DB.Where("Path LIKE ?", "%"+queryString+"%").Find(&routes)
+	if result.Error != nil {
+		SendResponse(c, http.StatusOK, 500, nil, "error: Failed to retrieve routes.")
+		return
+	}
+
+	paths := make([]map[string]string, len(routes))
+	for i, route := range routes {
+		paths[i] = map[string]string{
+			"id":    strconv.Itoa(int(route.ID)),
+			"name":  route.Name,
+			"value": route.Path,
+		}
+	}
+
+	SendResponse(c, http.StatusOK, 200, paths, "Success")
+	return
 }

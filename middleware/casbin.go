@@ -40,7 +40,6 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		// 从Gin的上下文中尝试获取角色
 		roleValue, exists := c.Get("role")
 		if !exists {
 			log.Println("Role not found in context. Ensure JWT middleware is run before Casbin middleware.")
@@ -50,7 +49,6 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 断言角色值的类型，确保它是一个字符串
 		role, ok := roleValue.(string)
 		if !ok {
 			log.Println("Role in context is not of type string.")
@@ -60,13 +58,11 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 使用角色作为Casbin的sub
 		sub := role
 
-		obj := c.Request.URL.Path // 获取请求的URL作为对象
-		act := c.Request.Method   // 获取HTTP方法作为动作
+		obj := c.Request.URL.Path
+		act := c.Request.Method
 
-		// 使用Casbin检查用户是否具有权限
 		log.Println("sub, obj, act", sub, obj, act)
 		ok, err := enforcer.Enforce(sub, obj, act)
 		if err != nil {
@@ -84,7 +80,7 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Next() // 如果权限检查通过，继续执行后续的中间件/处理程序
+		c.Next()
 
 	}
 }

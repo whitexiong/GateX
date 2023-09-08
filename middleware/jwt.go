@@ -4,18 +4,16 @@ import (
 	"github.com/golang-jwt/jwt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	secretKey = "YOUR_SECRET_KEY" // 你的JWT签名密钥，实际项目中不应硬编码此值，而应该从环境变量或配置文件中读取。
-)
+var secretKey = os.Getenv("JWT_SECRET_KEY")
 
 func InitJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 从请求头中获取令牌
 
 		excludedPaths := []string{"/user/login", "/user/logout"}
 		currentPath := c.FullPath()
@@ -36,7 +34,6 @@ func InitJWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 接受 Bearer Token 的格式，所以我们需要将它分割开来
 		splitToken := strings.Split(tokenString, "Bearer ")
 		if len(splitToken) != 2 {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid token format"})
@@ -44,7 +41,6 @@ func InitJWTMiddleware() gin.HandlerFunc {
 		}
 		tokenString = splitToken[1]
 
-		// 验证令牌
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.NewValidationError("invalid signing method", jwt.ValidationErrorSignatureInvalid)
@@ -52,7 +48,6 @@ func InitJWTMiddleware() gin.HandlerFunc {
 			return []byte(secretKey), nil
 		})
 
-		// 处理令牌验证的结果
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid token", "error": err.Error()})
 			return

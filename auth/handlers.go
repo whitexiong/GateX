@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -16,7 +17,7 @@ type LoginInput struct {
 }
 
 var jwtService = JWT{
-	SecretKey: "YOUR_SECRET_KEY", // 这里需要更安全的键
+	SecretKey: os.Getenv("JWT_SECRET_KEY"),
 	Issuer:    "gatewayApp",
 	Expiry:    24 * time.Hour,
 }
@@ -39,11 +40,8 @@ func Login(c *gin.Context) {
 		panic("CustomError#401#Invalid password")
 	}
 
-	// 从user.Roles字段中提取角色名
 	roleNames := extractRoleNames(user.Roles)
 
-	// 传递username, userID, and roles到GenerateToken函数
-	// 这里我假设你希望在token中只包含第一个角色名，如果不是这样，请根据需要修改。
 	var primaryRole string
 	if len(roleNames) > 0 {
 		primaryRole = roleNames[0]

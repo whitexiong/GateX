@@ -53,8 +53,29 @@
             </el-form-item>
 
             <!-- 路径 -->
+<!--            <el-form-item label="路径">-->
+<!--              <el-input v-model="Route.Path" placeholder="请输入路径"></el-input>-->
+<!--            </el-form-item>-->
+
             <el-form-item label="路径">
-              <el-input v-model="Route.Path" placeholder="请输入路径"></el-input>
+              <el-autocomplete
+                  v-model="Route.Path"
+                  :fetch-suggestions="querySearchAsync"
+                  placeholder="请输入菜单路径"
+                  @select="handleSelect"
+              >
+                <template #suffix>
+                  <el-icon class="el-input__icon" @click="handleIconClick">
+                    <edit />
+                  </el-icon>
+                </template>
+                <template #default="{ item }">
+                  <div class="flex-container">
+                    <div class="value">{{ item.value }}</div>
+                    <div class="name">{{ item.name }}</div>
+                  </div>
+                </template>
+              </el-autocomplete>
             </el-form-item>
 
             <!-- 状态 -->
@@ -72,7 +93,7 @@
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="Routes" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>
+    <el-table :data="Routes" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border default-expand-all>
 
       <el-table-column label="节点">
         <template #default="scope">
@@ -105,7 +126,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { getList, add, deletedById, update, detail } from '@/services/routeService';
+import { getList, add, deletedById, update, detail, getPathList } from '@/services/routeService';
 import { Plus, Refresh, RefreshRight, Search } from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import * as icons from '@element-plus/icons';
@@ -121,7 +142,7 @@ export default {
       ParentID: null,
       Path: null,
     };
-
+    const paths = ref([])
     const apiMethods = {
       getList,
       add,
@@ -177,11 +198,26 @@ export default {
       }
     };
 
+    const loadPathsFromServer = async () => {
+      const response = await getPathList();
+      paths.value = response.data;
+    };
+
+    const querySearchAsync = (queryString, cb) => {
+      const results = paths.value.filter(path => typeof path.value === 'string' && path.value.indexOf(queryString) === 0);
+      cb(results);
+    };
+
+    const handleSelect = (item) => {
+      // Route.value.RouteID = parseInt(item.id, 10);
+    };
+
     onMounted(async () => {
       await listData();
       if (Routes.value) {
         RouteOptions.value = Routes.value.map(Route => transformRouteToCascader(Route));
       }
+      await loadPathsFromServer();
     });
 
     return {
@@ -207,7 +243,9 @@ export default {
       getDetail,
       deleted,
       resetData,
-      dialogTitle
+      dialogTitle,
+      querySearchAsync,
+      handleSelect
     };
   }
 };
@@ -229,5 +267,11 @@ export default {
 
 .wide-cascader .el-input__inner {
   width: 300px !important;
+}
+
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
 }
 </style>

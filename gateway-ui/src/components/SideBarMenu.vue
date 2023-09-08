@@ -4,14 +4,20 @@
       class="el-menu-vertical"
       :collapse="isCollapse">
 
+    <div class="logo-container" @click="goToHome">
+      <img src="@/assets/logo.png" alt="Logo" class="nav-logo"/>
+      <span class="logo-text" v-if="!isCollapse">GateX</span>
+    </div>
     <MenuRenderer :menus="menuData" :isCollapse="isCollapse"/>
 
   </el-menu>
 </template>
 
+
 <script>
-import {ref, onMounted} from 'vue';
+import { ref, onMounted } from 'vue';
 import MenuRenderer from '@/components/MenuRenderer.vue';
+import { useRouter } from 'vue-router';
 
 export default {
   props: {
@@ -25,8 +31,8 @@ export default {
   },
 
   setup() {
-
     const menuData = ref([]);
+    const router = useRouter();
 
     onMounted(() => {
       const storedMenus = localStorage.getItem('userMenus');
@@ -35,25 +41,32 @@ export default {
       }
     });
 
-    return {menuData};
+    // 跳转到根目录页面
+    const goToHome = () => {
+      router.push('/');
+    };
+
+    return { menuData, goToHome };
   }
 }
 </script>
 
-<style>
-.el-menu-vertical:not(.el-menu--collapse) {
-  width: 200px;
-  min-height: 400px;
-}
-
-</style>
-
 <style scoped>
 .el-menu-vertical {
-  width: 200px; /* 默认宽度 */
+  width: 200px;
 }
 
 .el-menu-vertical.el-menu--collapse {
-  width: 80px; /* 折叠后的宽度 */
+  width: 80px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.nav-logo {
+  margin-right: 10px;
 }
 </style>

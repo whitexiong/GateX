@@ -50,9 +50,12 @@ export default {
     const handleLogin = async () => {
       try {
         const response = await UserLogin(loginForm.value.username, loginForm.value.password);
-        if (response && response.data.token) {
+        if (response && response.code === 200 && response.data.token) {
           // 存储token
           localStorage.setItem('token', response.data.token);
+
+          // 存储用户数据
+          localStorage.setItem('userData', JSON.stringify(response.data.user));
 
           // 请求并存储用户的菜单数据
           await fetchAndStoreMenus();
@@ -60,7 +63,7 @@ export default {
           // 导航到Dashboard
           await router.push({name: 'Dashboard'});
         } else {
-          errorMsg.value = "登录失败: " + response.data.msg;
+          errorMsg.value = "登录失败: " + response.msg;
         }
       } catch (error) {
         errorMsg.value = "登录失败，请联系管理员!";

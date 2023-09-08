@@ -6,7 +6,6 @@
       <!-- 搜索部分 -->
       <div style="display: flex; align-items: center;">
         <el-input
-            v-model="searchText"
             placeholder="请输入菜单名称"
             style="width: 200px;"
             @keyup.enter="getList">
@@ -56,7 +55,24 @@
 
             <!-- 路径 -->
             <el-form-item label="路径">
-              <el-input v-model="Menu.Path" placeholder="请输入菜单路径"></el-input>
+              <el-autocomplete
+                  v-model="Menu.Path"
+                  :fetch-suggestions="querySearchAsync"
+                  placeholder="请输入菜单路径"
+                  @select="handleSelect"
+              >
+                <template #suffix>
+                  <el-icon class="el-input__icon" @click="handleIconClick">
+                    <edit />
+                  </el-icon>
+                </template>
+                <template #default="{ item }">
+                  <div class="flex-container">
+                    <div class="value">{{ item.value }}</div>
+                    <div class="name">{{ item.name }}</div>
+                  </div>
+                </template>
+              </el-autocomplete>
             </el-form-item>
 
             <!-- 图标选择 -->
@@ -105,7 +121,7 @@
     </div>
 
     <!-- 表格区域 -->
-    <el-table :data="Menus" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border>
+    <el-table :data="Menus" row-key="id" lazy :load="loadTree" style="width: 1980px; height: 1000px" border default-expand-all>
       <el-table-column label="菜单名称">
         <template #default="scope">
           <span :style="{ paddingLeft: (scope.row._indent || 0) * 20 + 'px' }">{{ scope.row.name }}</span>
@@ -144,6 +160,7 @@
 <script>
 import {ref, onMounted, computed} from 'vue';
 import { getList, detail, add, update, deletedById } from '@/services/menuService';
+import { getPathList } from '@/services/routeService';
 import {Plus, Refresh, RefreshRight, Search, Tools} from "@element-plus/icons-vue";
 import ADialog from '@/components/ADialog.vue';
 import * as icons from '@element-plus/icons';
@@ -152,10 +169,10 @@ import {useCRUD} from "@/composables/useCRUD";
 export default {
   components: {Tools, Refresh, Search, Plus, RefreshRight,ADialog},
   setup() {
-    const selectedIcon = ref("");
     const iconDialogVisible = ref(false);
     const options = ref([]);
-    const allIcons = Object.keys(icons);  // 获取所有图标的名字
+    const allIcons = Object.keys(icons);
+    const paths = ref([])
     const initFormData = {
         ID: null,
         Name: null,
@@ -164,14 +181,16 @@ export default {
         ParentID: null,
         Order: 0,
         Status: null,
+        RouteID: null,
     }
+
 
     const apiMethods = {
       getList,
       add,
       update,
       detail,
-      deletedById
+      deletedById,
     };
 
     const anyProps = {
@@ -201,6 +220,22 @@ export default {
       toggleStatus,
     } = useCRUD(apiMethods, initFormData);
 
+    const loadPathsFromServer = async () => {
+      const response = await getPathList();
+      paths.value = response.data;
+    };
+
+    const querySearchAsync = (queryString, cb) => {
+      const results = paths.value.filter(path => typeof path.value === 'string' && path.value.indexOf(queryString) === 0);
+      cb(results);
+    };
+
+    const handleSelect = (item) => {
+      Menu.value.RouteID = parseInt(item.id, 10);
+    };
+
+    const selectedIcon = ref(Menu.value.Icon);
+
     const transCascader = (Menu) => {
       return {
         value: Menu.value,
@@ -217,6 +252,7 @@ export default {
       }
     }
 
+
     const selectIcon = (icon) => {
       displayIcon.value = icon;
       Menu.value.Icon = icon;
@@ -228,9 +264,11 @@ export default {
       if (Menus.value) {
         options.value = Menus.value.map(Menu => transCascader(Menu));
       }
+      await loadPathsFromServer();
     });
 
     const getIconComponent = (icon) => {
+      console.log("是否是有效组件",icons[icon])
       return icons[icon];
     };
 
@@ -239,12 +277,13 @@ export default {
     };
 
     const displayIcon = computed({
-      get: () => selectedIcon.value,
+      get: () => Menu.value.Icon,
       set: (value) => {
-        selectedIcon.value = value;
+        Menu.value.Icon = value;
         iconDialogVisible.value = false;
       }
     });
+
 
     const paginatedIcons = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value;
@@ -281,6 +320,8 @@ export default {
       getDetail,
       toggleStatus,
       loadTree,
+      querySearchAsync,
+      handleSelect,
     };
   }
 };
@@ -369,4 +410,9 @@ export default {
   margin: 0;
 }
 
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
 </style>

@@ -21,3 +21,7 @@ export const update = (id, data) => {
 export const deletedById = (id) => {
     return axios.get(`${BASE_URL}/route/delete/${id}`);
 }
+export const getPathList = (query) => {
+    return axios.get(`${BASE_URL}/route/paths/${encodeURIComponent(query)}`);
+}
+
