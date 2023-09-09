@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = "http://127.0.0.1:8051";
+import { BASE_URL } from './constants';
+
 
 export const getList = () => {
     return axios.get(`${BASE_URL}/menu/list`);
