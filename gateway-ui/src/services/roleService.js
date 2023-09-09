@@ -11,7 +11,6 @@ export const add = (roleData) => {
 }
 
 export const detail = (id) => {
-    console.log("详情id", id)
     return axios.get(`${BASE_URL}/role/detail/${id}`);
 }
 
