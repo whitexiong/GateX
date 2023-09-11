@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"gateway/handlers"
+	"gateway/api/v1/handlers"
+	"gateway/api/v1/routes"
 	"gateway/middleware"
 	"gateway/models"
-	"gateway/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"

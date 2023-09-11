@@ -1,9 +1,9 @@
 FROM golang:1.20 AS backend-builder
 WORKDIR /app
-COPY ./auth /app/auth
+COPY api/v1/handlers/auth /app/auth
 COPY ./config /app/config
 COPY ./gateway-ui/*.go /app/gateway-ui/
-COPY ./routes /app/routes
+COPY api/v1/routes /app/routes
 COPY go.mod go.sum ./
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o gateway-system .

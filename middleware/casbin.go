@@ -18,7 +18,7 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 		return nil
 	}
 
-	enforcer, err := casbin.NewEnforcer("config/model.conf", adapter)
+	enforcer, err := casbin.NewEnforcer("config/gateway.conf", adapter)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize casbin with GORM adapter: %v", err)
@@ -53,7 +53,7 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 		if !ok {
 			log.Println("Role in context is not of type string.")
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"message": "Internal server error",
+				"message": "Internal server apierrors",
 			})
 			return
 		}

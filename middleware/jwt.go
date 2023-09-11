@@ -49,7 +49,7 @@ func InitJWTMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid token", "error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid token", "apierrors": err.Error()})
 			return
 		}
 
