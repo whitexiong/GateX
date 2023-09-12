@@ -1,61 +1,60 @@
 package middleware
 
 import (
-	"fmt"
+	"errors"
+	"gateway/api/v1/handlers"
+	"gateway/apierrors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
-	"runtime"
-	"strconv"
-	"strings"
 	"time"
 )
 
-func InitializeCustomErrorMiddleware() gin.HandlerFunc {
+func InitLoggingAndErrorHandlingMiddleware() gin.HandlerFunc {
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+
 	return func(c *gin.Context) {
-		defer func() {
-			if err := recover(); err != nil {
-				if c.IsAborted() {
-					c.Status(200)
-				}
-				switch errStr := err.(type) {
-				case string:
-					p := strings.Split(errStr, "#")
-					if len(p) == 3 && p[0] == "CustomError" {
-						statusCode, e := strconv.Atoi(p[1])
-						if e != nil {
-							break
-						}
-						c.Status(statusCode)
-						fmt.Println(
-							time.Now().Format("2006-01-02 15:04:05"),
-							"[ERROR]",
-							c.Request.Method,
-							c.Request.URL,
-							statusCode,
-							c.Request.RequestURI,
-							c.ClientIP(),
-							p[2],
-						)
-						c.JSON(http.StatusOK, gin.H{
-							"code": statusCode,
-							"msg":  p[2],
-						})
-					} else {
-						c.JSON(http.StatusOK, gin.H{
-							"code": 500,
-							"msg":  errStr,
-						})
-					}
-				case runtime.Error:
-					c.JSON(http.StatusOK, gin.H{
-						"code": 500,
-						"msg":  errStr.Error(),
-					})
-				default:
-					panic(err)
-				}
+		startTime := time.Now()
+		c.Next() // 处理请求
+
+		latency := time.Since(startTime)
+		status := c.Writer.Status()
+
+		entry := logger.WithFields(logrus.Fields{
+			"status":   status,
+			"method":   c.Request.Method,
+			"path":     c.Request.URL.Path,
+			"clientIP": c.ClientIP(),
+			"latency":  latency,
+		})
+
+		if len(c.Errors) > 0 {
+			// 如果有错误，发送统一的错误响应
+			lastError := c.Errors.Last().Err // 获取最后一个错误
+
+			var customErr *apierrors.CustomError
+			if errors.As(lastError, &customErr) {
+				handlers.SendResponse(c, httpCodeBasedOnErrorCode(customErr.Code), customErr.Code, nil)
 			}
-		}()
-		c.Next()
+
+			// 记录错误
+			for _, e := range c.Errors {
+				entry.WithField("error", e.Err).Error("Request failed")
+			}
+		} else {
+			entry.Info("Request succeeded")
+		}
+	}
+}
+
+func httpCodeBasedOnErrorCode(code int) int {
+	switch code {
+	case apierrors.InvalidRequestData:
+		return http.StatusBadRequest
+	case apierrors.Unauthorized:
+		return http.StatusUnauthorized
+	default:
+		return http.StatusInternalServerError
 	}
 }

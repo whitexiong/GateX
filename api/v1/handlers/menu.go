@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gateway/apierrors"
 	"gateway/models"
+	"gateway/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -12,14 +13,14 @@ import (
 func GetAllMenus(c *gin.Context) {
 	var menus []models.Menu
 	models.DB.Order("`Order`").Find(&menus)
-
-	transformedMenus := ConvertMenusToTree(menus)
+	transformedMenus := util.ConvertToTree(menus, util.MapMenuToTreeItem)
 	SendResponse(c, http.StatusOK, 200, transformedMenus)
 }
 
 func CreateMenu(c *gin.Context) {
 	var menu models.Menu
 	if err := c.BindJSON(&menu); err != nil {
+		SendResponse(c, http.StatusOK, apierrors.AuthenticationFailed, nil)
 		apierrors.HandleGinError(c, apierrors.DataNotFound)
 		return
 	}
@@ -44,15 +45,15 @@ func UpdateMenu(c *gin.Context) {
 	var menu models.Menu
 	id := c.Param("id")
 	if result := models.DB.First(&menu, id); result.Error != nil {
-		apierrors.HandleGinError(c, apierrors.DataNotFound)
+		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
 		return
 	}
 	if err := c.BindJSON(&menu); err != nil {
-		apierrors.HandleGinError(c, apierrors.InvalidRequestData)
+		SendResponse(c, http.StatusOK, apierrors.InvalidRequestData, nil)
 		return
 	}
 	if result := models.DB.Save(&menu); result.Error != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 	SendResponse(c, http.StatusOK, apierrors.Success, menu)
@@ -62,11 +63,11 @@ func DeleteMenu(c *gin.Context) {
 	var menu models.Menu
 	id := c.Param("id")
 	if result := models.DB.First(&menu, id); result.Error != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 	if result := models.DB.Delete(&menu); result.Error != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 	SendResponse(c, http.StatusOK, apierrors.Success, nil)
@@ -76,34 +77,34 @@ func GetUserMenus(c *gin.Context) {
 	// 获取用户名从 JWT 中
 	roleName, exists := c.Get("role")
 	if !exists {
-		apierrors.HandleGinError(c, apierrors.Unauthorized)
+		SendResponse(c, http.StatusOK, apierrors.Unauthorized, nil)
 		return
 	}
 
 	if roleName == "root" {
 		var allMenus []models.Menu
 		if err := models.DB.Find(&allMenus).Error; err != nil {
-			apierrors.HandleGinError(c, apierrors.DatabaseError)
+			SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 			return
 		}
-		transformedMenus := ConvertMenusToTree(allMenus)
+		transformedMenus := util.ConvertToTree(allMenus, util.MapMenuToTreeItem)
 		SendResponse(c, http.StatusOK, apierrors.Success, transformedMenus)
 		return
 	}
 
 	role, _ := c.Get("role")
 	if role == nil {
-		apierrors.HandleGinError(c, apierrors.Unauthorized)
+		SendResponse(c, http.StatusOK, apierrors.Unauthorized, nil)
 		return
 	}
 
 	menus, err := fetchUserMenus(fmt.Sprintf("%v", role))
 	if err != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 
-	transformedMenus := ConvertMenusToTree(menus)
+	transformedMenus := util.ConvertToTree(menus, util.MapMenuToTreeItem)
 	SendResponse(c, http.StatusOK, apierrors.Success, transformedMenus)
 }
 
@@ -125,40 +126,4 @@ func fetchUserMenus(roleName string) ([]models.Menu, error) {
 	}
 
 	return menus, nil
-}
-
-func ConvertMenusToTree(menus []models.Menu) []map[string]interface{} {
-	var transformedMenus []map[string]interface{}
-	menuMap := make(map[uint]*map[string]interface{})
-
-	for _, menu := range menus {
-		transformedMenu := map[string]interface{}{
-			"id":       menu.ID,
-			"name":     menu.Name,
-			"value":    menu.ID,
-			"label":    menu.Name,
-			"path":     menu.Path,
-			"icon":     menu.Icon,
-			"status":   menu.Status,
-			"children": []map[string]interface{}{},
-		}
-		menuMap[menu.ID] = &transformedMenu
-	}
-
-	for _, menu := range menus {
-		if menu.ParentID != nil && menuMap[*menu.ParentID] != nil {
-			parentMenu := menuMap[*menu.ParentID]
-			if children, ok := (*parentMenu)["children"].([]map[string]interface{}); ok {
-				(*parentMenu)["children"] = append(children, *menuMap[menu.ID])
-			}
-		}
-	}
-
-	for _, menu := range menus {
-		if menu.ParentID == nil {
-			transformedMenus = append(transformedMenus, *menuMap[menu.ID])
-		}
-	}
-
-	return transformedMenus
 }

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"gateway/apierrors"
 	"gateway/models"
 	"github.com/fatih/structs"
@@ -18,7 +17,7 @@ func GetRole(c *gin.Context) {
 	roleID := c.Param("id")
 	result := models.DB.Find(&role, roleID)
 	if result.Error != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 
@@ -36,7 +35,7 @@ func GetRole(c *gin.Context) {
 func GetRoleList(c *gin.Context) {
 	var roles []models.Role
 	if err := models.DB.Find(&roles).Error; err != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 	SendResponse(c, http.StatusOK, 200, roles)
@@ -47,7 +46,7 @@ func AddRole(c *gin.Context) {
 	var role models.RoleRequest
 
 	if err := c.BindJSON(&role); err != nil {
-		apierrors.HandleGinError(c, apierrors.InvalidRequestData)
+		SendResponse(c, http.StatusOK, apierrors.InvalidRequestData, nil)
 		return
 	}
 
@@ -55,7 +54,7 @@ func AddRole(c *gin.Context) {
 
 	if err := tx.Create(&role.Role).Error; err != nil {
 		tx.Rollback()
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 
@@ -64,7 +63,7 @@ func AddRole(c *gin.Context) {
 		result := tx.First(&route, routeID)
 		if result.Error != nil {
 			tx.Rollback()
-			apierrors.HandleGinError(c, apierrors.DatabaseError)
+			SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 			return
 		}
 
@@ -80,14 +79,13 @@ func AddRole(c *gin.Context) {
 
 		if err := tx.Create(&casbinRule).Error; err != nil {
 			tx.Rollback()
-			apierrors.HandleGinError(c, apierrors.DatabaseError)
+			SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 			return
 		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		apierrors.HandleGinError(c, apierrors.DatabaseError)
-
+		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
 
@@ -100,7 +98,7 @@ func UpdateRole(c *gin.Context) {
 	var updatedRoleRequest models.RoleRequest
 
 	if err := c.BindJSON(&updatedRoleRequest); err != nil {
-		apierrors.HandleGinError(c, apierrors.InvalidRequestData)
+		SendResponse(c, http.StatusOK, apierrors.InvalidRequestData, nil)
 		return
 	}
 
@@ -109,14 +107,14 @@ func UpdateRole(c *gin.Context) {
 	// 更新角色信息
 	if err := tx.Model(&models.Role{}).Where("id = ?", roleID).Updates(updatedRoleRequest.Role).Error; err != nil {
 		tx.Rollback()
-		apierrors.HandleGinError(c, apierrors.InternalServerError)
+		SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
 		return
 	}
 
 	// 删除旧的casbin规则
 	if err := tx.Delete(&models.CasbinRule{}, "v0 = ?", updatedRoleRequest.Role.Name).Error; err != nil {
 		tx.Rollback()
-		apierrors.HandleGinError(c, apierrors.InternalServerError)
+		SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
 		return
 	}
 
@@ -126,7 +124,7 @@ func UpdateRole(c *gin.Context) {
 		result := tx.First(&route, routeID)
 		if result.Error != nil {
 			tx.Rollback()
-			apierrors.HandleGinError(c, apierrors.InternalServerError)
+			SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
 			return
 		}
 
@@ -142,13 +140,13 @@ func UpdateRole(c *gin.Context) {
 
 		if err := tx.Create(&casbinRule).Error; err != nil {
 			tx.Rollback()
-			apierrors.HandleGinError(c, apierrors.InternalServerError)
+			SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
 			return
 		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		apierrors.HandleGinError(c, apierrors.InternalServerError)
+		SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
 		return
 	}
 
@@ -159,41 +157,8 @@ func UpdateRole(c *gin.Context) {
 func DeleteRole(c *gin.Context) {
 	roleId, _ := strconv.Atoi(c.Param("roleId"))
 	if err := models.DB.Delete(&models.Role{}, roleId).Error; err != nil {
-		apierrors.HandleGinError(c, apierrors.InternalServerError)
+		SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
 		return
-	}
-	SendResponse(c, http.StatusOK, 200, nil)
-	return
-}
-
-func GetPermissions(c *gin.Context) {
-	var routes []models.Route
-	if err := models.DB.Find(&routes).Error; err != nil {
-		apierrors.HandleGinError(c, apierrors.InternalServerError)
-		return
-	}
-	SendResponse(c, http.StatusOK, 200, routes)
-	return
-}
-
-func AddPermissions(c *gin.Context) {
-	roleId, _ := strconv.Atoi(c.Param("roleId"))
-	var routeIds []int
-	if err := c.BindJSON(&routeIds); err != nil {
-		apierrors.HandleGinError(c, apierrors.InternalServerError)
-		return
-	}
-	for _, routeId := range routeIds {
-		permission := fmt.Sprintf("role_%d_route_%d", roleId, routeId)
-		rule := models.CasbinRule{
-			PType: "p",
-			V0:    strconv.Itoa(roleId),
-			V1:    permission,
-		}
-		if err := models.DB.Create(&rule).Error; err != nil {
-			apierrors.HandleGinError(c, apierrors.InternalServerError)
-			return
-		}
 	}
 	SendResponse(c, http.StatusOK, 200, nil)
 	return

@@ -12,32 +12,28 @@ type JWT struct {
 	Expiry    time.Duration
 }
 
-// Claims 自定义的 payload 数据
 type Claims struct {
 	Username string `json:"username"`
-	UserID   int64  `json:"user_id"` // 添加用户ID字段
-	Role     string `json:"role"`    // 添加角色名称字段
+	UserID   int64  `json:"user_id"`
+	Role     string `json:"role"`
 	jwt.StandardClaims
 }
 
-// GenerateToken 根据用户名生成一个JWT令牌
 func (j *JWT) GenerateToken(username string, userID int64, role string) (string, error) {
 	// 创建一个新的token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{
 		Username: username,
-		UserID:   userID, // 设置用户ID
-		Role:     role,   // 设置角色名称
+		UserID:   userID,
+		Role:     role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(j.Expiry).Unix(),
 			Issuer:    j.Issuer,
 		},
 	})
 
-	// 使用 SecretKey 进行签名并获得完整编码的字符串令牌
 	return token.SignedString([]byte(j.SecretKey))
 }
 
-// ParseToken 解析JWT令牌并返回用户名
 func (j *JWT) ParseToken(tokenStr string) (string, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

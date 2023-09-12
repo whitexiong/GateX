@@ -57,9 +57,10 @@ func Login(c *gin.Context) {
 	handlers.SendResponse(c, http.StatusOK, 200, gin.H{
 		"token": token,
 		"user": gin.H{
-			"username": user.Username,
-			"id":       user.ID,
-			"roles":    roleNames,
+			"username":   user.Username,
+			"avatar_url": user.AvatarURL,
+			"id":         user.ID,
+			"roles":      roleNames,
 		},
 	})
 	return

@@ -25,6 +25,7 @@ const (
 	ValidationError      = 601
 	AuthenticationFailed = 602
 	RateLimitExceeded    = 603
+	UploadFileFail       = 604
 )
 
 var errorDescriptions = map[int]string{
@@ -41,6 +42,7 @@ var errorDescriptions = map[int]string{
 	ValidationError:      "验证错误",
 	AuthenticationFailed: "认证失败",
 	RateLimitExceeded:    "超出频率限制",
+	UploadFileFail:       "上传文件失败",
 }
 
 func NewCustomError(code int) *CustomError {

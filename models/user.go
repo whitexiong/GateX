@@ -12,6 +12,7 @@ type User struct {
 	Password  string     `gorm:"size:255;not null"`
 	Email     string     `gorm:"size:100"`
 	Status    int8       `gorm:"type:tinyint"`
+	AvatarURL string     `gorm:"size:255"`
 	Roles     []*Role    `gorm:"many2many:user_roles"`
 	JwtTokens []JwtToken `gorm:"foreignKey:UserID"`
 	CreatedAt time.Time

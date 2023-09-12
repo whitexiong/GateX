@@ -41,6 +41,9 @@ func main() {
 	// 3. 启动面板
 	r := gin.Default()
 
+	//加载静态文件目录
+	r.Static("/uploads", "./uploads")
+
 	// 初始化中间件
 	middlewares := middleware.InitializeMiddlewares()
 	for _, m := range middlewares {

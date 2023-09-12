@@ -16,3 +16,11 @@ type Menu struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+func (m Menu) GetID() uint {
+	return m.ID
+}
+
+func (m Menu) GetParentID() *uint {
+	return m.ParentID
+}
