@@ -6,6 +6,7 @@ import (
 	"gateway/api/v1/routes"
 	"gateway/middleware"
 	"gateway/models"
+	"gateway/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
@@ -43,6 +44,13 @@ func main() {
 
 	//加载静态文件目录
 	r.Static("/uploads", "./uploads")
+
+	//启动 websocket
+	r.GET("/ws", func(c *gin.Context) {
+		pool := websocket.NewClientPool()
+		go pool.Start()
+		websocket.HandleWebSocketConnection(pool, c.Writer, c.Request)
+	})
 
 	// 初始化中间件
 	middlewares := middleware.InitializeMiddlewares()

@@ -58,7 +58,7 @@ func Login(c *gin.Context) {
 		"token": token,
 		"user": gin.H{
 			"username":   user.Username,
-			"avatar_url": user.AvatarURL,
+			"avatar_url": user.AvatarUrl,
 			"id":         user.ID,
 			"roles":      roleNames,
 		},
