@@ -45,18 +45,18 @@ func main() {
 	//加载静态文件目录
 	r.Static("/uploads", "./uploads")
 
-	//启动 websocket
-	r.GET("/ws", func(c *gin.Context) {
-		pool := websocket.NewClientPool()
-		go pool.Start()
-		websocket.HandleWebSocketConnection(pool, c.Writer, c.Request)
-	})
-
 	// 初始化中间件
 	middlewares := middleware.InitializeMiddlewares()
 	for _, m := range middlewares {
 		r.Use(m)
 	}
+
+	//启动 websocket
+	pool := websocket.NewClientPool()
+	go pool.Start()
+	r.GET("/ws", func(c *gin.Context) {
+		websocket.HandleWebSocketConnection(pool, c.Writer, c.Request)
+	})
 
 	// 启动路由
 	for _, setupFunc := range routes.AllRoutes {

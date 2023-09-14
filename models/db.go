@@ -42,6 +42,9 @@ func InitDatabase() error {
 		&APIEndpoint{},
 		&Route{},
 		&Menu{},
+		&ChatRoom{},
+		&Message{},
+		&ChatRoomUser{},
 	)
 	if err != nil {
 		return err

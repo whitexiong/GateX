@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -19,9 +20,9 @@ func HandleWebSocketConnection(pool *ClientPool, w http.ResponseWriter, r *http.
 		return
 	}
 
-	// 创建一个新的Client
+	clientID := uuid.New().String()
 	client := &Client{
-		ID:   "SomeUniqueID", // 实际上，你应该为每个客户端生成一个唯一的ID
+		ID:   clientID,
 		Conn: conn,
 		Pool: pool,
 	}

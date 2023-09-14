@@ -9,4 +9,5 @@ var AllRoutes = []func(r *gin.Engine){
 	SetupRoleRoutes,
 	SetupRoute,
 	SetupUploads,
+	SetUpChatRoutes,
 }

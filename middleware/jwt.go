@@ -15,7 +15,7 @@ var secretKey = os.Getenv("JWT_SECRET_KEY")
 func InitJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		excludedPaths := []string{"/user/login", "/user/logout", "/uploads/"}
+		excludedPaths := []string{"/user/login", "/user/logout", "/uploads/", "/ws"}
 		currentPath := c.FullPath()
 		log.Printf("Current request path: %s", currentPath)
 
