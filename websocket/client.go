@@ -10,7 +10,8 @@ type Client struct {
 	ID          string
 	Conn        *websocket.Conn
 	Pool        *ClientPool
-	ChatRoomIDs []int // 新增：客户端所在的聊天室ID列表
+	UserID      int   // 用户ID
+	ChatRoomIDs []int // 该用户参与的所有聊天室
 }
 
 type ClientMessage struct {

@@ -16,7 +16,7 @@ type LoginInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
-var jwtService = JWT{
+var JwtService = JWT{
 	SecretKey: os.Getenv("JWT_SECRET_KEY"),
 	Issuer:    "gatewayApp",
 	Expiry:    24 * time.Hour,
@@ -49,7 +49,7 @@ func Login(c *gin.Context) {
 		primaryRole = ""
 	}
 
-	token, err := jwtService.GenerateToken(user.Username, int64(user.ID), primaryRole)
+	token, err := JwtService.GenerateToken(user.Username, int64(user.ID), primaryRole)
 	if err != nil {
 		c.Error(err)
 	}

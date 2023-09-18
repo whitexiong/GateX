@@ -1,10 +1,12 @@
 package websocket
 
 import (
+	"gateway/api/v1/handlers/auth"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"os"
 )
 
 var upgrader = websocket.Upgrader{
@@ -13,6 +15,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+var secretKey = os.Getenv("JWT_SECRET_KEY")
+
 func HandleWebSocketConnection(pool *ClientPool, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -20,16 +24,31 @@ func HandleWebSocketConnection(pool *ClientPool, w http.ResponseWriter, r *http.
 		return
 	}
 
-	clientID := uuid.New().String()
-	client := &Client{
-		ID:   clientID,
-		Conn: conn,
-		Pool: pool,
+	tokenString := r.URL.Query().Get("token")
+	if tokenString == "" {
+		log.Println("Token not provided in WebSocket request")
+		conn.Close()
+		return
 	}
 
-	// 将新的Client注册到pool
+	userID, err := auth.JwtService.ParseToken(tokenString)
+	if err != nil {
+		log.Printf("Error parsing JWT: %s", err)
+		conn.Close()
+		return
+	}
+
+	clientID := uuid.New().String()
+	client := &Client{
+		ID:     clientID,
+		Conn:   conn,
+		Pool:   pool,
+		UserID: int(userID), // Set UserID from JWT
+	}
+
+	// Register the new Client to the pool
 	pool.Register <- client
 
-	// 开始为该客户端监听消息
+	// Start reading messages for this client
 	go client.Read()
 }

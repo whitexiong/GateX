@@ -34,7 +34,7 @@ func (j *JWT) GenerateToken(username string, userID int64, role string) (string,
 	return token.SignedString([]byte(j.SecretKey))
 }
 
-func (j *JWT) ParseToken(tokenStr string) (string, error) {
+func (j *JWT) ParseToken(tokenStr string) (int64, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -43,12 +43,12 @@ func (j *JWT) ParseToken(tokenStr string) (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims.Username, nil
+		return claims.UserID, nil
 	}
 
-	return "", fmt.Errorf("invalid token")
+	return 0, fmt.Errorf("invalid token")
 }

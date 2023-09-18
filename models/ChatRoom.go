@@ -8,7 +8,7 @@ type ChatRoom struct {
 	Description string    `gorm:"size:500"`
 	Users       []*User   `gorm:"many2many:chat_room_users"`
 	Messages    []Message `gorm:"foreignKey:ChatRoomID"`
-	IsPrivate   bool      `gorm:"default:true"`
+	RoomType    int       `gorm:"default:1"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
