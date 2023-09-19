@@ -6,7 +6,7 @@ type Role struct {
 	ID        uint    `gorm:"primaryKey"`
 	Name      string  `gorm:"uniqueIndex;size:50;not null"`
 	Status    int8    `gorm:"type:tinyint"`
-	Remark    string  `gorm:"type:varchar(255)"` // 添加的remark字段
+	Remark    string  `gorm:"type:varchar(255)"`
 	Users     []*User `gorm:"many2many:user_roles"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

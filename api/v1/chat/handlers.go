@@ -81,3 +81,46 @@ func GetChatHistoryForUser(c *gin.Context) {
 
 	handlers.SendResponse(c, http.StatusOK, 200, response)
 }
+
+func GetChatWindow(c *gin.Context) {
+	roomId := c.Param("roomId")
+	var chatRoom models.ChatRoom
+
+	result := models.DB.Preload("Users").Preload("Messages").Where("id = ?", roomId).First(&chatRoom)
+	if result.Error != nil {
+		handlers.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve chat room.")
+		return
+	}
+
+	handlers.SendResponse(c, http.StatusOK, 200, chatRoom)
+}
+
+func CreateChatRoom(c *gin.Context) {
+	var chatRoom models.ChatRoom
+
+	if err := c.BindJSON(&chatRoom); err != nil {
+		handlers.SendResponse(c, http.StatusBadRequest, -1, "Invalid input data.")
+		return
+	}
+
+	result := models.DB.Create(&chatRoom)
+	if result.Error != nil {
+		handlers.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create chat room.")
+		return
+	}
+
+	handlers.SendResponse(c, http.StatusOK, 200, chatRoom)
+}
+
+func DeleteChatWindow(c *gin.Context) {
+	roomId := c.Param("roomId")
+	var chatRoom models.ChatRoom
+
+	result := models.DB.Where("id = ?", roomId).Delete(&chatRoom)
+	if result.Error != nil {
+		handlers.SendResponse(c, http.StatusInternalServerError, -1, "Failed to delete chat room.")
+		return
+	}
+
+	handlers.SendResponse(c, http.StatusOK, 200, "Chat room deleted successfully.")
+}

@@ -24,7 +24,7 @@ type ChatUserResponse struct {
 	ID         uint   `json:"id"`
 	Username   string `json:"username"`
 	Avatar     string `json:"avatar"`
-	ChatRoomID uint   `json:"chat_room_id,omitempty"` // 注意，此处我们使用omitempty，这意味着如果该字段为空，它将不会出现在JSON响应中
+	ChatRoomID uint   `json:"chat_room_id,omitempty"`
 }
 
 func FindUserByUsername(username string) (*User, error) {
