@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"errors"
-	"gateway/api/v1/handlers"
+	"gateway/api/v1/setting"
 	"gateway/apierrors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -35,7 +35,7 @@ func InitLoggingAndErrorHandlingMiddleware() gin.HandlerFunc {
 
 			var customErr *apierrors.CustomError
 			if errors.As(lastError, &customErr) {
-				handlers.SendResponse(c, httpCodeBasedOnErrorCode(customErr.Code), customErr.Code, nil)
+				setting.SendResponse(c, httpCodeBasedOnErrorCode(customErr.Code), customErr.Code, nil)
 			}
 
 			// 记录错误

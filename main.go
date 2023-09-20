@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gateway/api/v1/handlers"
 	"gateway/api/v1/routes"
+	"gateway/api/v1/setting"
 	"gateway/middleware"
 	"gateway/models"
+	"gateway/ssh"
 	"gateway/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -34,7 +35,7 @@ func main() {
 
 	// 2. 请求代理
 	go func() {
-		http.HandleFunc("/", handlers.Proxy)
+		http.HandleFunc("/", setting.Proxy)
 		log.Printf("Server started on :%s", proxyPort)
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", proxyPort), nil))
 	}()
@@ -57,6 +58,9 @@ func main() {
 	r.GET("/ws", func(c *gin.Context) {
 		websocket.HandleWebSocketConnection(pool, c.Writer, c.Request)
 	})
+
+	//启动 ssh连接池
+	ssh.InitializeSSHConnectionPool()
 
 	// 启动路由
 	for _, setupFunc := range routes.AllRoutes {

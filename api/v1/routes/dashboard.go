@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"gateway/api/v1/handlers"
+	"gateway/api/v1/setting"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupDashboardRoutes(r *gin.Engine) {
 	dashboard := r.Group("/dashboard")
-	dashboard.GET("", handlers.ShowDashboard)
+	dashboard.GET("", setting.ShowDashboard)
 }

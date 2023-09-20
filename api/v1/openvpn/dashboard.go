@@ -1,11 +1,11 @@
-package handlers
+package openvpn
 
 import (
 	"gateway/models"
 	"github.com/gin-gonic/gin"
 )
 
-func ShowDashboard(c *gin.Context) {
+func Dashboard(c *gin.Context) {
 	// 获取数据库中的所有API统计数据
 	var apis []models.APIEndpoint
 	models.DB.Find(&apis)

@@ -1,7 +1,7 @@
 package chat
 
 import (
-	"gateway/api/v1/handlers"
+	"gateway/api/v1/setting"
 	"gateway/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -35,13 +35,13 @@ func GetChatUserList(c *gin.Context) {
 		}
 	}
 
-	handlers.SendResponse(c, http.StatusOK, 200, users)
+	setting.SendResponse(c, http.StatusOK, 200, users)
 }
 
 func GetChatHistoryForUser(c *gin.Context) {
 	currentUserIdStr, ok := c.Get("user_id")
 	if !ok {
-		handlers.SendResponse(c, http.StatusBadRequest, 400, "User ID not found or not of expected type.")
+		setting.SendResponse(c, http.StatusBadRequest, 400, "User ID not found or not of expected type.")
 		return
 	}
 
@@ -50,7 +50,7 @@ func GetChatHistoryForUser(c *gin.Context) {
 
 	otherUserId, err := strconv.Atoi(c.Param("otherUserId"))
 	if err != nil {
-		handlers.SendResponse(c, http.StatusBadRequest, 400, "Invalid other user ID.")
+		setting.SendResponse(c, http.StatusBadRequest, 400, "Invalid other user ID.")
 		return
 	}
 
@@ -58,7 +58,7 @@ func GetChatHistoryForUser(c *gin.Context) {
 	if err := models.DB.Where("(sender_id = ? AND to_user_id = ?) OR (sender_id = ? AND to_user_id = ?)",
 		currentUserId, otherUserId, otherUserId, currentUserId).
 		Order("created_at asc").Find(&messages).Error; err != nil {
-		handlers.SendResponse(c, http.StatusInternalServerError, 500, "Error fetching chat history.")
+		setting.SendResponse(c, http.StatusInternalServerError, 500, "Error fetching chat history.")
 		return
 	}
 
@@ -79,7 +79,7 @@ func GetChatHistoryForUser(c *gin.Context) {
 		})
 	}
 
-	handlers.SendResponse(c, http.StatusOK, 200, response)
+	setting.SendResponse(c, http.StatusOK, 200, response)
 }
 
 func GetChatWindow(c *gin.Context) {
@@ -88,28 +88,28 @@ func GetChatWindow(c *gin.Context) {
 
 	result := models.DB.Preload("Users").Preload("Messages").Where("id = ?", roomId).First(&chatRoom)
 	if result.Error != nil {
-		handlers.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve chat room.")
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve chat room.")
 		return
 	}
 
-	handlers.SendResponse(c, http.StatusOK, 200, chatRoom)
+	setting.SendResponse(c, http.StatusOK, 200, chatRoom)
 }
 
 func CreateChatRoom(c *gin.Context) {
 	var chatRoom models.ChatRoom
 
 	if err := c.BindJSON(&chatRoom); err != nil {
-		handlers.SendResponse(c, http.StatusBadRequest, -1, "Invalid input data.")
+		setting.SendResponse(c, http.StatusBadRequest, -1, "Invalid input data.")
 		return
 	}
 
 	result := models.DB.Create(&chatRoom)
 	if result.Error != nil {
-		handlers.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create chat room.")
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create chat room.")
 		return
 	}
 
-	handlers.SendResponse(c, http.StatusOK, 200, chatRoom)
+	setting.SendResponse(c, http.StatusOK, 200, chatRoom)
 }
 
 func DeleteChatWindow(c *gin.Context) {
@@ -118,9 +118,9 @@ func DeleteChatWindow(c *gin.Context) {
 
 	result := models.DB.Where("id = ?", roomId).Delete(&chatRoom)
 	if result.Error != nil {
-		handlers.SendResponse(c, http.StatusInternalServerError, -1, "Failed to delete chat room.")
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to delete chat room.")
 		return
 	}
 
-	handlers.SendResponse(c, http.StatusOK, 200, "Chat room deleted successfully.")
+	setting.SendResponse(c, http.StatusOK, 200, "Chat room deleted successfully.")
 }

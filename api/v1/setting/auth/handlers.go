@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"gateway/api/v1/handlers"
+	"gateway/api/v1/setting"
 	"gateway/apierrors"
 	"gateway/models"
 	"github.com/gin-gonic/gin"
@@ -26,17 +26,17 @@ func Login(c *gin.Context) {
 	var input LoginInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		handlers.SendResponse(c, http.StatusOK, apierrors.InvalidRequestData, nil)
+		setting.SendResponse(c, http.StatusOK, apierrors.InvalidRequestData, nil)
 		return
 	}
 
 	user, err := models.FindUserByUsername(input.Username)
 	if err != nil {
-		handlers.SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+		setting.SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		handlers.SendResponse(c, http.StatusOK, apierrors.AuthenticationFailed, nil)
+		setting.SendResponse(c, http.StatusOK, apierrors.AuthenticationFailed, nil)
 		return
 	}
 
@@ -54,7 +54,7 @@ func Login(c *gin.Context) {
 		c.Error(err)
 	}
 
-	handlers.SendResponse(c, http.StatusOK, 200, gin.H{
+	setting.SendResponse(c, http.StatusOK, 200, gin.H{
 		"token": token,
 		"user": gin.H{
 			"username":   user.Username,
@@ -75,6 +75,6 @@ func extractRoleNames(roles []*models.Role) []string {
 }
 
 func Logout(c *gin.Context) {
-	handlers.SendResponse(c, http.StatusOK, 200, nil)
+	setting.SendResponse(c, http.StatusOK, 200, nil)
 	return
 }

@@ -27,7 +27,7 @@ func InitializeCasbinMiddleware() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 
-		excludedPaths := []string{"/user/login", "/user/logout", "/uploads/", "/ws"}
+		excludedPaths := []string{"/setting/user/login", "/setting/user/logout", "/setting/uploads/", "/ws"}
 		currentPath := c.FullPath()
 		log.Printf("Current request path: %s", currentPath)
 

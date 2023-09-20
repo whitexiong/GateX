@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"gateway/api/v1/handlers/auth"
+	"gateway/api/v1/setting/auth"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"

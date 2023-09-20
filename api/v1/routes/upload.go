@@ -1,7 +1,7 @@
 package routes
 
 import (
-	v1 "gateway/api/v1/handlers"
+	v1 "gateway/api/v1/setting"
 	"github.com/gin-gonic/gin"
 )
 
