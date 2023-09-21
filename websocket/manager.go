@@ -56,19 +56,11 @@ func (pool *ClientPool) Start() {
 
 				models.DB.Create(&models.ChatRoomUser{ChatRoomID: chatRoom.ID, UserID: chatMsg.SenderID})
 
-				// 检查 ToUserID 是否为 nil
-				if chatMsg.ToUserID != nil {
-					models.DB.Create(&models.ChatRoomUser{ChatRoomID: chatRoom.ID, UserID: *chatMsg.ToUserID})
-				} else {
-					log.Println("Warning: chatMsg.ToUserID is nil.")
-					continue
-				}
 			}
 
 			dbMessage := models.Message{
 				SenderID:   chatMsg.SenderID,
 				ChatRoomID: chatMsg.ChatRoomID,
-				ToUserID:   chatMsg.ToUserID,
 				Content:    chatMsg.Content,
 			}
 			if err := models.DB.Create(&dbMessage).Error; err != nil {
@@ -76,15 +68,32 @@ func (pool *ClientPool) Start() {
 				continue
 			}
 
-			for userID, client := range pool.Clients {
-				log.Printf("客户端: %d, 发送到：%d\n", userID, chatMsg.ToUserID)
-				if chatMsg.ToUserID != nil && userID == int(*chatMsg.ToUserID) {
-					if err := client.Conn.WriteJSON(chatMsg); err != nil {
-						log.Println("错误:", err)
-						return
-					}
+			//for _, client := range pool.Clients {
+			//	// 检查该客户端是否在消息的目标房间里
+			//	if clientIsInRoom(client, chatMsg.ChatRoomID) && client.UserID != int(chatMsg.SenderID) {
+			//		if err := client.Conn.WriteJSON(chatMsg); err != nil {
+			//			log.Println("错误:", err)
+			//			return
+			//		}
+			//	}
+			//}
+
+			for _, client := range pool.Clients {
+				if err := client.Conn.WriteJSON(chatMsg); err != nil {
+					log.Println("错误:", err)
+					return
 				}
 			}
+
 		}
 	}
+}
+
+func clientIsInRoom(client *Client, targetRoomID uint) bool {
+	for _, roomID := range client.ChatRoomIDs {
+		if roomID == int(targetRoomID) {
+			return true
+		}
+	}
+	return false
 }

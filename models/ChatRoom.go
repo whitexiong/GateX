@@ -12,3 +12,10 @@ type ChatRoom struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+
+type ChatRoomRequest struct {
+	Name        string `json:"Name"`
+	Description string `json:"Description"`
+	RoomType    int    `json:"RoomType"`
+	UserIDs     []uint `json:"UserIDs"`
+}

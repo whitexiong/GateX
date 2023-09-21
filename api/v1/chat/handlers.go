@@ -38,7 +38,7 @@ func GetChatUserList(c *gin.Context) {
 	setting.SendResponse(c, http.StatusOK, 200, users)
 }
 
-func GetChatHistoryForUser(c *gin.Context) {
+func GetChatHistoryForRoom(c *gin.Context) {
 	currentUserIdStr, ok := c.Get("user_id")
 	if !ok {
 		setting.SendResponse(c, http.StatusBadRequest, 400, "User ID not found or not of expected type.")
@@ -48,15 +48,14 @@ func GetChatHistoryForUser(c *gin.Context) {
 	// 这里简化了用户ID的处理，并假设它是uint类型
 	currentUserId := uint(currentUserIdStr.(float64))
 
-	otherUserId, err := strconv.Atoi(c.Param("otherUserId"))
+	chatRoomId, err := strconv.Atoi(c.Param("chatRoomId"))
 	if err != nil {
-		setting.SendResponse(c, http.StatusBadRequest, 400, "Invalid other user ID.")
+		setting.SendResponse(c, http.StatusBadRequest, 400, "Invalid chat room ID.")
 		return
 	}
 
 	var messages []models.Message
-	if err := models.DB.Where("(sender_id = ? AND to_user_id = ?) OR (sender_id = ? AND to_user_id = ?)",
-		currentUserId, otherUserId, otherUserId, currentUserId).
+	if err := models.DB.Where("chat_room_id = ?", chatRoomId).
 		Order("created_at asc").Find(&messages).Error; err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, 500, "Error fetching chat history.")
 		return
@@ -82,30 +81,75 @@ func GetChatHistoryForUser(c *gin.Context) {
 	setting.SendResponse(c, http.StatusOK, 200, response)
 }
 
-func GetChatWindow(c *gin.Context) {
-	roomId := c.Param("roomId")
-	var chatRoom models.ChatRoom
+func GetChatWindowsByUser(c *gin.Context) {
+	currentUserIdStr, ok := c.Get("user_id")
+	if !ok {
+		setting.SendResponse(c, http.StatusBadRequest, 400, "User ID not found or not of expected type.")
+		return
+	}
+	currentUserId := uint(currentUserIdStr.(float64))
 
-	result := models.DB.Preload("Users").Preload("Messages").Where("id = ?", roomId).First(&chatRoom)
+	var chatRooms []models.ChatRoom
+
+	result := models.DB.Preload("Users").Preload("Messages").Joins("JOIN chat_room_users on chat_room_users.chat_room_id = chat_rooms.id").Where("chat_room_users.user_id = ?", currentUserId).Find(&chatRooms)
 	if result.Error != nil {
-		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve chat room.")
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve chat rooms.")
 		return
 	}
 
-	setting.SendResponse(c, http.StatusOK, 200, chatRoom)
+	setting.SendResponse(c, http.StatusOK, 200, chatRooms)
 }
 
 func CreateChatRoom(c *gin.Context) {
-	var chatRoom models.ChatRoom
+	var request models.ChatRoomRequest
 
-	if err := c.BindJSON(&chatRoom); err != nil {
+	if err := c.BindJSON(&request); err != nil {
 		setting.SendResponse(c, http.StatusBadRequest, -1, "Invalid input data.")
 		return
 	}
 
-	result := models.DB.Create(&chatRoom)
-	if result.Error != nil {
+	// 获取当前登录的userID
+	currentUserIdStr, ok := c.Get("user_id")
+	if !ok {
+		setting.SendResponse(c, http.StatusBadRequest, 400, "User ID not found or not of expected type.")
+		return
+	}
+
+	// 将当前用户ID转化为uint类型，并加入到request.UserIDs中
+	currentUserId := uint(currentUserIdStr.(float64))
+	request.UserIDs = append(request.UserIDs, currentUserId) // 加入到UserIDs中
+
+	// 从数据库中查询这些用户
+	var users []*models.User
+	if err := models.DB.Where("id IN ?", request.UserIDs).Find(&users).Error; err != nil {
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to find users.")
+		return
+	}
+
+	chatRoom := models.ChatRoom{
+		Name:        request.Name,
+		Description: request.Description,
+		RoomType:    request.RoomType,
+		Users:       users,
+	}
+
+	// 开始事务
+	tx := models.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Create(&chatRoom).Error; err != nil {
+		tx.Rollback()
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create chat room.")
+		return
+	}
+
+	// 如果所有操作都成功，提交事务
+	if err := tx.Commit().Error; err != nil {
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to commit transaction.")
 		return
 	}
 

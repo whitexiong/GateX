@@ -6,8 +6,8 @@ import (
 )
 
 func SetupConfiguration(r *gin.Engine) {
-	group := r.Group("/openvpn/configuration")
+	group := r.Group("/openvpn/certificate")
 	group.GET("/list", openvpn.GetCertificateList)
-	group.POST("/create", openvpn.CreateCertificate)
+	group.POST("/add", openvpn.CreateCertificate)
 	group.GET("/delete/:id", openvpn.RevokeCertificate)
 }
