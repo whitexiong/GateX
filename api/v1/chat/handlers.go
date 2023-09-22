@@ -126,8 +126,16 @@ func CreateChatRoom(c *gin.Context) {
 		return
 	}
 
+	roomName := ""
+	for i, user := range users {
+		roomName += user.Username
+		if i != len(users)-1 {
+			roomName += "、" // 这是中文的顿号
+		}
+	}
+
 	chatRoom := models.ChatRoom{
-		Name:        request.Name,
+		Name:        roomName, // 使用拼接后的名称作为房间名称
 		Description: request.Description,
 		RoomType:    request.RoomType,
 		Users:       users,

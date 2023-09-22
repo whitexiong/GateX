@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"gateway/api/v1/setting/auth"
+	"gateway/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
@@ -38,17 +39,31 @@ func HandleWebSocketConnection(pool *ClientPool, w http.ResponseWriter, r *http.
 		return
 	}
 
-	clientID := uuid.New().String()
-	client := &Client{
-		ID:     clientID,
-		Conn:   conn,
-		Pool:   pool,
-		UserID: int(userID), // Set UserID from JWT
+	// 根据用户ID查询其所有的聊天室ID
+	var chatRoomUser []models.ChatRoomUser
+	// 假设您已经有一个全局的DB变量，代表数据库连接
+	err = models.DB.Where("user_id = ?", userID).Find(&chatRoomUser).Error
+	if err != nil {
+		log.Printf("Error querying ChatRoomUser: %s", err)
+		conn.Close()
+		return
 	}
 
-	// Register the new Client to the pool
+	chatRoomIDs := make([]int, len(chatRoomUser))
+	for i, item := range chatRoomUser {
+		chatRoomIDs[i] = int(item.ChatRoomID)
+	}
+
+	clientID := uuid.New().String()
+	client := &Client{
+		ID:          clientID,
+		Conn:        conn,
+		Pool:        pool,
+		UserID:      int(userID),
+		ChatRoomIDs: chatRoomIDs, // 将查询得到的房间ID列表设置到客户端实例中
+	}
+
 	pool.Register <- client
 
-	// Start reading messages for this client
 	go client.Read()
 }
