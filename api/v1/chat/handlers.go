@@ -24,6 +24,7 @@ func GetChatUserList(c *gin.Context) {
 				Username:   dbUser.Username,
 				Avatar:     dbUser.AvatarUrl,
 				ChatRoomID: 0,
+				IsAI:       dbUser.IsAI,
 			})
 		} else {
 			users = append(users, models.ChatUserResponse{
@@ -31,6 +32,7 @@ func GetChatUserList(c *gin.Context) {
 				Username:   dbUser.Username,
 				Avatar:     dbUser.AvatarUrl,
 				ChatRoomID: chatRoomUser.ChatRoomID,
+				IsAI:       dbUser.IsAI,
 			})
 		}
 	}
@@ -108,40 +110,48 @@ func CreateChatRoom(c *gin.Context) {
 		return
 	}
 
-	// 获取当前登录的userID
 	currentUserIdStr, ok := c.Get("user_id")
 	if !ok {
 		setting.SendResponse(c, http.StatusBadRequest, 400, "User ID not found or not of expected type.")
 		return
 	}
 
-	// 将当前用户ID转化为uint类型，并加入到request.UserIDs中
 	currentUserId := uint(currentUserIdStr.(float64))
 	request.UserIDs = append(request.UserIDs, currentUserId) // 加入到UserIDs中
 
-	// 从数据库中查询这些用户
 	var users []*models.User
 	if err := models.DB.Where("id IN ?", request.UserIDs).Find(&users).Error; err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to find users.")
 		return
 	}
 
+	hasAIUser := false
+	for _, user := range users {
+		if user.IsAI {
+			hasAIUser = true
+			break
+		}
+	}
+
+	if hasAIUser {
+		request.RoomType = models.AIChatRoom
+	}
+
 	roomName := ""
 	for i, user := range users {
 		roomName += user.Username
 		if i != len(users)-1 {
-			roomName += "、" // 这是中文的顿号
+			roomName += "、"
 		}
 	}
 
 	chatRoom := models.ChatRoom{
-		Name:        roomName, // 使用拼接后的名称作为房间名称
+		Name:        roomName,
 		Description: request.Description,
 		RoomType:    request.RoomType,
 		Users:       users,
 	}
 
-	// 开始事务
 	tx := models.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -155,13 +165,12 @@ func CreateChatRoom(c *gin.Context) {
 		return
 	}
 
-	// 如果所有操作都成功，提交事务
 	if err := tx.Commit().Error; err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to commit transaction.")
 		return
 	}
 
-	setting.SendResponse(c, http.StatusOK, 200, chatRoom)
+	setting.SendResponse(c, http.StatusOK, 200, nil)
 }
 
 func DeleteChatWindow(c *gin.Context) {

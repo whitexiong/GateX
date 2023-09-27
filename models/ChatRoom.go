@@ -2,6 +2,11 @@ package models
 
 import "time"
 
+const (
+	NormalChatRoom = 1
+	AIChatRoom     = 2
+)
+
 type ChatRoom struct {
 	ID          uint      `gorm:"primaryKey"`
 	Name        string    `gorm:"size:255"`

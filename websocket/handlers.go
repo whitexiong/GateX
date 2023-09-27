@@ -41,7 +41,6 @@ func HandleWebSocketConnection(pool *ClientPool, w http.ResponseWriter, r *http.
 
 	// 根据用户ID查询其所有的聊天室ID
 	var chatRoomUser []models.ChatRoomUser
-	// 假设您已经有一个全局的DB变量，代表数据库连接
 	err = models.DB.Where("user_id = ?", userID).Find(&chatRoomUser).Error
 	if err != nil {
 		log.Printf("Error querying ChatRoomUser: %s", err)
@@ -60,10 +59,9 @@ func HandleWebSocketConnection(pool *ClientPool, w http.ResponseWriter, r *http.
 		Conn:        conn,
 		Pool:        pool,
 		UserID:      int(userID),
-		ChatRoomIDs: chatRoomIDs, // 将查询得到的房间ID列表设置到客户端实例中
+		ChatRoomIDs: chatRoomIDs,
 	}
 
 	pool.Register <- client
-
 	go client.Read()
 }

@@ -13,6 +13,7 @@ type User struct {
 	Email     string     `gorm:"size:100"`
 	Status    int8       `gorm:"type:tinyint"`
 	AvatarUrl string     `gorm:"size:255"`
+	IsAI      bool       `gorm:"default:false;not null;comment:'标识用户是否为AI'"`
 	Roles     []*Role    `gorm:"many2many:user_roles"`
 	ParentID  *uint      `gorm:"index:idx_parent_id;comment:'上级用户'"`
 	JwtTokens []JwtToken `gorm:"foreignKey:UserID"`
@@ -25,6 +26,7 @@ type ChatUserResponse struct {
 	Username   string `json:"username"`
 	Avatar     string `json:"avatar"`
 	ChatRoomID uint   `json:"chat_room_id,omitempty"`
+	IsAI       bool   `json:"is_ai"`
 }
 
 func FindUserByUsername(username string) (*User, error) {

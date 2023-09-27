@@ -16,7 +16,32 @@ func GetAllUsers(c *gin.Context) {
 		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
 		return
 	}
-	SendResponse(c, http.StatusOK, 200, users)
+
+	columnsConfig := []map[string]interface{}{
+		{
+			"label":      "用户名",
+			"key":        "Username",
+			"sortable":   true,
+			"searchable": true,
+		},
+		{
+			"label":      "邮箱",
+			"key":        "Email",
+			"sortable":   true,
+			"searchable": true,
+		},
+	}
+
+	responseData := map[string]interface{}{
+		"columnsConfig": columnsConfig,
+		"items":         users,
+		"pagination": map[string]int{
+			"currentPage": 1, // 根据实际的页码来调整
+			"pageSize":    len(users),
+			"totalItems":  len(users), // 或者你可以获取整个数据表的记录数
+		},
+	}
+	SendResponse(c, http.StatusOK, 200, responseData)
 }
 
 func CreateUser(c *gin.Context) {
