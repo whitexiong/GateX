@@ -11,19 +11,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
 
-var (
-	hostUrl   = "wss://aichat.xf-yun.com/v1/chat"
-	appid     = "8bfa590f"
-	apiSecret = "MzhmYTczZjBmNzUzZWU4ZWE3OTY2NWMw"
-	apiKey    = "8050ec08d9a4adb6d237e1b60ef61129"
-)
-
 // 构造讯飞AI认证URL
 func AssembleAuthUrl() string {
+	apiSecret := os.Getenv("AI_API_SECRET")
+	apiKey := os.Getenv("AI_API_KEY")
+	hostUrl := os.Getenv("AI_HOST_URL")
 	ul, err := url.Parse(hostUrl)
 	if err != nil {
 		fmt.Println(err)
@@ -61,12 +58,11 @@ func GenParams(chatRoomID uint, question string) map[string]interface{} {
 		"content": question,
 	}
 	chatHistory = append(chatHistory, currentMessage)
-
 	return map[string]interface{}{
-		"header": map[string]interface{}{"app_id": appid},
+		"header": map[string]interface{}{"app_id": os.Getenv("AI_APP_ID")},
 		"parameter": map[string]interface{}{
 			"chat": map[string]interface{}{
-				"domain":      "general",
+				"domain":      "generalv2",
 				"temperature": 0.8,
 				"top_k":       6,
 				"max_tokens":  2048,
@@ -182,7 +178,7 @@ type Message struct {
 
 func GetChatHistoryForRoom(chatRoomID uint) []map[string]interface{} {
 	var messages []models.Message
-	models.DB.Where("chat_room_id = ?", chatRoomID).Find(&messages)
+	models.DB.Where("chat_room_id = ?", chatRoomID).Order("created_at desc").Limit(3).Find(&messages)
 
 	var chatHistory []map[string]interface{}
 	for _, msg := range messages {
