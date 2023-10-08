@@ -44,33 +44,33 @@ func AssembleAuthUrl() string {
 
 // 生成与讯飞AI交互的参数
 func GenParams(chatRoomID uint, question string) map[string]interface{} {
-	// 如果问题为空，则使用默认问题
 	if question == "" {
 		question = "你好"
 	}
 
-	// 获取历史聊天记录
 	chatHistory := GetChatHistoryForRoom(chatRoomID)
 
-	// 将当前问题添加到历史聊天记录中
 	currentMessage := map[string]interface{}{
 		"role":    "user",
 		"content": question,
 	}
 	chatHistory = append(chatHistory, currentMessage)
+
 	return map[string]interface{}{
-		"header": map[string]interface{}{"app_id": os.Getenv("AI_APP_ID")},
+		"header": map[string]interface{}{
+			"app_id": os.Getenv("AI_APP_ID"),
+		},
 		"parameter": map[string]interface{}{
 			"chat": map[string]interface{}{
-				"domain":      "generalv2",
-				"temperature": 0.8,
-				"top_k":       6,
-				"max_tokens":  2048,
-				"auditing":    "default",
+				"domain":      "generalv2", // 注意：示例中是"general"而不是"generalv2"
+				"temperature": 0.5,         // 根据示例，值调整为0.5
+				"max_tokens":  1024,        // 根据示例，值调整为1024
 			},
 		},
 		"payload": map[string]interface{}{
-			"message": map[string]interface{}{"text": chatHistory},
+			"message": map[string]interface{}{
+				"text": chatHistory, // 整个聊天历史，包括最新的消息
+			},
 		},
 	}
 }
@@ -191,5 +191,6 @@ func GetChatHistoryForRoom(chatRoomID uint) []map[string]interface{} {
 			"content": msg.Content,
 		})
 	}
+
 	return chatHistory
 }
