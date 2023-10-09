@@ -3,6 +3,7 @@ package setting
 import (
 	"gateway/apierrors"
 	"gateway/models"
+	"gateway/pkg/pagination"
 	"github.com/fatih/structs"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -11,9 +12,30 @@ import (
 )
 
 func GetAllUsers(c *gin.Context) {
+	type RequestBody struct {
+		Name        string `json:"name"`
+		PageSize    int    `json:"pageSize"`
+		CurrentPage int    `json:"currentPage"`
+	}
+
+	var body RequestBody
+	if err := c.BindJSON(&body); err != nil {
+		SendResponse(c, http.StatusBadRequest, apierrors.InvalidRequestData, nil)
+		return
+	}
+
+	// Note the changes here:
+	paginator, searcher := pagination.NewPaginationService(body.CurrentPage, body.PageSize, body.Name,
+		pagination.WithSearchField("Username"),
+	)
+
+	query := models.DB.Model(&models.User{}).Preload("Roles")
+	query = searcher.Search(query)
+	query = paginator.Paginate(query)
+
 	var users []models.User
-	if result := models.DB.Preload("Roles").Find(&users); result.Error != nil {
-		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+	if result := query.Find(&users); result.Error != nil {
+		SendResponse(c, http.StatusInternalServerError, apierrors.DataNotFound, nil)
 		return
 	}
 
@@ -32,13 +54,16 @@ func GetAllUsers(c *gin.Context) {
 		},
 	}
 
+	var totalUsers int64
+	models.DB.Model(&models.User{}).Count(&totalUsers)
+
 	responseData := map[string]interface{}{
 		"columnsConfig": columnsConfig,
 		"items":         users,
 		"pagination": map[string]int{
-			"currentPage": 1, // 根据实际的页码来调整
-			"pageSize":    len(users),
-			"totalItems":  len(users), // 或者你可以获取整个数据表的记录数
+			"currentPage": body.CurrentPage,
+			"pageSize":    body.PageSize,
+			"totalItems":  int(totalUsers),
 		},
 	}
 	SendResponse(c, http.StatusOK, 200, responseData)

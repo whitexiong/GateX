@@ -10,7 +10,7 @@ func SetupUser(r *gin.Engine) {
 	group := r.Group("/setting/user")
 	group.POST("login", auth.Login)
 	group.POST("logout", auth.Logout)
-	group.GET("list", setting.GetAllUsers)
+	group.POST("list", setting.GetAllUsers)
 	group.POST("add", setting.CreateUser)
 	group.GET("detail/:id", setting.GetUserDetail)
 	group.POST("update/:id", setting.UpdateUser)
