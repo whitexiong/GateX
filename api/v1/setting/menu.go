@@ -83,7 +83,7 @@ func GetUserMenus(c *gin.Context) {
 
 	if roleName == "root" {
 		var allMenus []models.Menu
-		if err := models.DB.Find(&allMenus).Error; err != nil {
+		if err := models.DB.Order("`order` ASC").Find(&allMenus).Error; err != nil {
 			SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 			return
 		}
@@ -121,7 +121,7 @@ func fetchUserMenus(roleName string) ([]models.Menu, error) {
 	}
 
 	var menus []models.Menu
-	if err := models.DB.Where("route_id IN ?", routeIds).Find(&menus).Error; err != nil {
+	if err := models.DB.Where("route_id IN ?", routeIds).Order("`order` ASC").Find(&menus).Error; err != nil {
 		return nil, err
 	}
 

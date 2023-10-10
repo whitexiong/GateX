@@ -76,12 +76,31 @@ func GenParams(chatRoomID uint, question string) map[string]interface{} {
 }
 
 func StartChatWithAI(chatRoomID uint, question string) string {
-	d := websocket.Dialer{HandshakeTimeout: 5 * time.Second}
-	conn, resp, err := d.Dial(AssembleAuthUrl(), nil)
+	const maxRetries = 3               // 最大重试次数
+	const retryDelay = 2 * time.Second // 每次失败后的等待时间
 
-	if err != nil || resp.StatusCode != 101 {
-		fmt.Println("连接AI错误:", readResp(resp), err)
-		return ""
+	var conn *websocket.Conn
+	var resp *http.Response
+	var err error
+	d := websocket.Dialer{HandshakeTimeout: 5 * time.Second}
+
+	for i := 0; i < maxRetries; i++ {
+		conn, resp, err = d.Dial(AssembleAuthUrl(), nil)
+		if err == nil && resp.StatusCode == 101 {
+			// 连接成功
+			break
+		}
+
+		// 打印错误信息
+		fmt.Println("连接AI错误 (尝试 #", i+1, "):", readResp(resp), err)
+
+		// 如果达到最大重试次数，则返回
+		if i == maxRetries-1 {
+			return ""
+		}
+
+		// 等待并重试
+		time.Sleep(retryDelay)
 	}
 
 	go func() {
