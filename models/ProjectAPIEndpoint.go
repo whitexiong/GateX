@@ -15,7 +15,8 @@ type ProjectAPIEndpoint struct {
 	RequiredRoles string `gorm:"size:255"`
 	Version       string `gorm:"size:50"`
 	Environment   string `gorm:"size:50"`
-	Status        string `gorm:"size:50"`
+	Sort          int    `gorm:"default:1"`
+	Status        int8   `gorm:"type:tinyint"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }

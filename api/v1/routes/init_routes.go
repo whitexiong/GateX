@@ -3,6 +3,7 @@ package routes
 import (
 	"gateway/api/v1/routes/chat"
 	"gateway/api/v1/routes/openvpn"
+	"gateway/api/v1/routes/projects"
 	"gateway/api/v1/routes/setting"
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +21,9 @@ var AllRoutes = []func(r *gin.Engine){
 	openvpn.SetupConfiguration,
 	openvpn.SetupUsers,
 	openvpn.SetupNetwork,
+
+	projects.SetupProjects,
+	projects.SetupProjectAPIEndpoints,
 
 	SetupDashboardRoutes,
 	SetupUploads,

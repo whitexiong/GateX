@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type ProjectProject struct {
+type Project struct {
 	ID          uint                 `gorm:"primaryKey;autoIncrement"`
 	Name        string               `gorm:"size:255;not null;uniqueIndex"`
 	Description string               `gorm:"size:1024"`
@@ -10,7 +10,8 @@ type ProjectProject struct {
 	Category    string               `gorm:"size:255"`
 	Tags        string               `gorm:"size:255"`
 	OwnerID     uint                 `gorm:"foreignKey:UserID"`
-	sort        int                  `gorm:"default:1"`
+	Sort        int                  `gorm:"default:1"`
+	Status      int8                 `gorm:"type:tinyint"`
 	APIs        []ProjectAPIEndpoint `gorm:"foreignKey:ProjectID"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

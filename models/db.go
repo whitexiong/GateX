@@ -45,6 +45,8 @@ func InitDatabase() error {
 		&ChatRoom{},
 		&Message{},
 		&ChatRoomUser{},
+		&Project{},
+		&ProjectAPIEndpoint{},
 	)
 	if err != nil {
 		return err

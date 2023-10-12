@@ -9,6 +9,7 @@ import (
 	"gateway/models"
 	"github.com/gorilla/websocket"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -55,6 +56,7 @@ func GenParams(chatRoomID uint, question string) map[string]interface{} {
 		"content": question,
 	}
 	chatHistory = append(chatHistory, currentMessage)
+	log.Printf("上下文：%d\n", chatHistory)
 
 	return map[string]interface{}{
 		"header": map[string]interface{}{
