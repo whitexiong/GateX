@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gateway/api/v1/routes"
 	"gateway/api/v1/setting"
+	"gateway/dao"
 	"gateway/middleware"
 	"gateway/models"
 	"gateway/ssh"
@@ -32,6 +33,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("连接数据库失败 %v", err)
 	}
+
+	dao.InitDao()
 
 	// 2. 请求代理
 	go func() {

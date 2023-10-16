@@ -32,9 +32,9 @@ func (dao *ProjectDAO) GetProjectByID(id uint) (*models.Project, error) {
 
 func (dao *ProjectDAO) UpdateProject(p *models.Project) error {
 	if p == nil {
-		return errors.New("provided projects is nil")
+		return errors.New("provided project is nil")
 	}
-	return dao.DB.Save(p).Error
+	return dao.DB.Model(p).Updates(p).Error
 }
 
 func (dao *ProjectDAO) DeleteProject(id uint) error {

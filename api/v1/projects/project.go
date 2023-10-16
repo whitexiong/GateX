@@ -10,17 +10,6 @@ import (
 	"strconv"
 )
 
-var projectDAO = dao.NewProjectDAO(models.DB)
-
-//func GetProjectList(c *gin.Context) {
-//	projects, err := projectDAO.ListProjects()
-//	if err != nil {
-//		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve project list.")
-//		return
-//	}
-//	setting.SendResponse(c, http.StatusOK, 200, projects)
-//}
-
 func GetProjectList(c *gin.Context) {
 	type RequestBody struct {
 		Name        string `json:"name"`
@@ -61,7 +50,6 @@ func GetProjectList(c *gin.Context) {
 			"sortable":   true,
 			"searchable": true,
 		},
-		// ... 添加其他需要的列配置
 	}
 
 	var totalProjects int64
@@ -86,7 +74,7 @@ func CreateProject(c *gin.Context) {
 		return
 	}
 
-	err := projectDAO.CreateProject(&project)
+	err := dao.DefaultProjectDAO.CreateProject(&project)
 	if err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create project.")
 		return
@@ -102,7 +90,7 @@ func GetProjectDetails(c *gin.Context) {
 		return
 	}
 
-	project, err := projectDAO.GetProjectByID(uint(id))
+	project, err := dao.DefaultProjectDAO.GetProjectByID(uint(id))
 	if err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve project details.")
 		return
@@ -125,7 +113,7 @@ func UpdateProject(c *gin.Context) {
 	}
 
 	project.ID = uint(id)
-	err = projectDAO.UpdateProject(&project)
+	err = dao.DefaultProjectDAO.UpdateProject(&project)
 	if err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to update project.")
 		return
@@ -141,7 +129,7 @@ func DeleteProject(c *gin.Context) {
 		return
 	}
 
-	err = projectDAO.DeleteProject(uint(id))
+	err = dao.DefaultProjectDAO.DeleteProject(uint(id))
 	if err != nil {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to delete project.")
 		return

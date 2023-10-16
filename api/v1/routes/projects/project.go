@@ -10,6 +10,6 @@ func SetupProjects(r *gin.Engine) {
 	group.POST("/list", projects.GetProjectList)
 	group.POST("/add", projects.CreateProject)
 	group.GET("/details/:id", projects.GetProjectDetails)
-	group.PUT("/update/:id", projects.UpdateProject)
+	group.POST("/update/:id", projects.UpdateProject)
 	group.GET("/delete/:id", projects.DeleteProject)
 }

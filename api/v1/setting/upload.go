@@ -20,5 +20,5 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	SendResponse(c, http.StatusOK, 200, gin.H{"avatar_url": savePath})
+	SendResponse(c, http.StatusOK, 200, gin.H{"url": savePath})
 }
