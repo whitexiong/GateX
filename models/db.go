@@ -47,6 +47,11 @@ func InitDatabase() error {
 		&ChatRoomUser{},
 		&Project{},
 		&ProjectAPIEndpoint{},
+		&ProjectFile{},
+		&ProjectMilestone{},
+		&ProjectSetting{},
+		&ProjectTask{},
+		&ProjectTimelineEvent{},
 	)
 	if err != nil {
 		return err
