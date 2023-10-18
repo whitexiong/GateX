@@ -79,7 +79,28 @@ func CreateProject(c *gin.Context) {
 		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create project.")
 		return
 	}
-	setting.SendResponse(c, http.StatusOK, 200, "Project created successfully.")
+
+	defaultSetting := &models.ProjectSetting{
+		ProjectID:   project.ID,
+		IP:          "127.0.0.1",
+		Port:        80,
+		Environment: "Development",
+		Description: "Default setting for the project",
+	}
+	err = dao.DefaultProjectSettingDAO.CreateProjectSetting(defaultSetting)
+	if err != nil {
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to create default project setting.")
+		return
+	}
+
+	project.DefaultSettingID = defaultSetting.ID
+	err = dao.DefaultProjectDAO.UpdateProject(&project)
+	if err != nil {
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to update project with default setting ID.")
+		return
+	}
+
+	setting.SendResponse(c, http.StatusOK, 200, "Project and default setting created successfully.")
 }
 
 func GetProjectDetails(c *gin.Context) {
@@ -135,4 +156,43 @@ func DeleteProject(c *gin.Context) {
 		return
 	}
 	setting.SendResponse(c, http.StatusOK, 200, "Project deleted successfully.")
+}
+
+func GetProjectSetting(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		setting.SendResponse(c, http.StatusBadRequest, -1, "Invalid project setting ID.")
+		return
+	}
+
+	ProjectSetting, err := dao.DefaultProjectSettingDAO.GetProjectSettingByProjectID(uint(id))
+	if err != nil {
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to retrieve project setting.")
+		return
+	}
+	setting.SendResponse(c, http.StatusOK, 200, ProjectSetting)
+}
+
+func UpdateOrCreateProjectSetting(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		setting.SendResponse(c, http.StatusBadRequest, -1, "Invalid project setting ID.")
+		return
+	}
+
+	var projectSetting models.ProjectSetting
+	if err := c.ShouldBindJSON(&projectSetting); err != nil {
+		setting.SendResponse(c, http.StatusBadRequest, -1, "Invalid project setting data.")
+		return
+	}
+
+	projectSetting.ID = uint(id)
+	err = dao.DefaultProjectSettingDAO.UpdateProjectSetting(&projectSetting)
+	if err != nil {
+		setting.SendResponse(c, http.StatusInternalServerError, -1, "Failed to update or create project setting.")
+		return
+	}
+	setting.SendResponse(c, http.StatusOK, 200, "Project setting updated or created successfully.")
 }

@@ -12,4 +12,8 @@ func SetupProjects(r *gin.Engine) {
 	group.GET("/details/:id", projects.GetProjectDetails)
 	group.POST("/update/:id", projects.UpdateProject)
 	group.GET("/delete/:id", projects.DeleteProject)
+
+	group.GET("/setting/:id", projects.GetProjectSetting)
+	group.POST("/setting/:id", projects.UpdateOrCreateProjectSetting)
+
 }
