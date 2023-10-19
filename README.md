@@ -1,6 +1,6 @@
 <div align="center">
 
-# ![GateX Logo](https://github.com/whitexiong/Gatex-ui/raw/master/src/assets/logo.png) GateX
+# <img src="https://github.com/whitexiong/Gatex-ui/raw/master/src/assets/logo.png" width="150" alt="GateX Logo"> GateX
 
 
 **项目名称** 是一个为现代网络应用程序设计的健壮网关解决方案。结合了 Go 的高效性与 Vue3 的灵活性，为用户带来无与伦比的体验。
