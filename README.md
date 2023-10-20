@@ -2,7 +2,8 @@
 
 # <img src="https://github.com/whitexiong/Gatex-ui/raw/master/src/assets/logo.png" width="150" alt="GateX Logo"> GateX
 
-**项目名称** 是一个为现代网络应用程序设计的健壮网关解决方案。结合了 Go 的高效性与 Vue3 的灵活性，为用户带来无与伦比的体验。
+**GateX** 是一个为现代网络应用程序设计的健壮网关解决方案。结合了 Go 的高效性与 Vue3 的灵活性，项目集成了聊天室功能模仿微信界面可添加AI用户进行问答，
+同时集成了 openVpn 方便企业进行部署开发。
 
 [![Go Version](https://img.shields.io/badge/Go-1.20-blue?style=flat&logo=go)](https://golang.org/)
 [![Vue3](https://img.shields.io/badge/Vue-3.x-green.svg?style=flat&logo=vue.js)](https://vuejs.org/)
@@ -14,10 +15,11 @@
 ## 🌟 特性
 
 - 🔒 **身份验证**：使用 JWT 和 Casbin 进行身份认证和权限控制。
-- 🌐 **路由管理**：轻松定义与管理 API 端点。
+- 🌐 **路由管理**：轻松定义与管理 API 端点，RBAC 的权限模型。
 - 🖥️ **现代用户界面**：采用 Vue3 与 Element-UI 构建。
-- 🗣️ **聊天室**：对接了科大讯飞的API聊天机器人，使用了 websocket 进行在线聊天并可发送图片。
-- 🛡️ **OpenVPN**：项目需连接 OpenVPN 才可共享，在线创建证书。
+- 🗣️ **聊天室**：对接了科大讯飞的星火模型、自己可扩展其他AI，使用了 websocket 进行在线聊天并可发送图片、视频。
+- 🛡️ **OpenVPN**：一键生成证书、实时查看在线用户。
+- 🛡️ **Gogs**：集成了 gogs 自建git仓库， 方便进行项目管理。
 
 ## 🔧 技术栈
 
