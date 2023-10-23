@@ -24,12 +24,11 @@ func GetAllUsers(c *gin.Context) {
 		return
 	}
 
-	// Note the changes here:
 	paginator, searcher := pagination.NewPaginationService(body.CurrentPage, body.PageSize, body.Name,
 		pagination.WithSearchField("Username"),
 	)
 
-	query := models.DB.Model(&models.User{}).Preload("Roles")
+	query := models.DB.Model(&models.User{}).Preload("Roles").Where("Username != ?", "admin")
 	query = searcher.Search(query)
 	query = paginator.Paginate(query)
 
@@ -55,7 +54,7 @@ func GetAllUsers(c *gin.Context) {
 	}
 
 	var totalUsers int64
-	models.DB.Model(&models.User{}).Count(&totalUsers)
+	models.DB.Model(&models.User{}).Where("Username != ?", "admin").Count(&totalUsers)
 
 	responseData := map[string]interface{}{
 		"columnsConfig": columnsConfig,
@@ -138,6 +137,15 @@ func UpdateUser(c *gin.Context) {
 	if err := c.BindJSON(&userReq); err != nil {
 		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
 		return
+	}
+
+	if userReq.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
+		if err != nil {
+			SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
+			return
+		}
+		userReq.User.Password = string(hashedPassword)
 	}
 
 	if result := models.DB.Save(&userReq.User); result.Error != nil {

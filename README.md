@@ -54,6 +54,14 @@ npm run serve
 
 访问前端应用：http://localhost:8080
 
+
+# 启动 gogs 服务
+nohup ./gogs web &> /dev/null &
+
+# 关闭
+kill -9 [PID]
+
+
 ```
 
 ## 🚀 未来计划

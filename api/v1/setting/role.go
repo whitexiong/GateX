@@ -34,10 +34,12 @@ func GetRole(c *gin.Context) {
 
 func GetRoleList(c *gin.Context) {
 	var roles []models.Role
-	if err := models.DB.Find(&roles).Error; err != nil {
+
+	if err := models.DB.Where("Name != ?", "root").Find(&roles).Error; err != nil {
 		SendResponse(c, http.StatusOK, apierrors.DatabaseError, nil)
 		return
 	}
+
 	SendResponse(c, http.StatusOK, 200, roles)
 	return
 }
