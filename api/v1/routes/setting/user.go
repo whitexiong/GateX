@@ -16,4 +16,6 @@ func SetupUser(r *gin.Engine) {
 	group.POST("update/:id", setting.UpdateUser)
 	group.GET("delete/:id", setting.DeleteUser)
 	group.GET("menus", setting.GetUserMenus)
+	group.GET("current", setting.GetCurrentUser)
+	group.POST("current/update", setting.UpdateCurrentUser)
 }

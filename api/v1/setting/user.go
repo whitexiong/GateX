@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -179,4 +180,91 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	SendResponse(c, http.StatusOK, 200, nil)
+}
+
+func GetCurrentUser(c *gin.Context) {
+	var user models.User
+
+	// 从Gin的上下文中获取当前用户的ID
+	currentUserIdStr, ok := c.Get("user_id")
+	if !ok {
+		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+		return
+	}
+
+	currentUserId, err := strconv.Atoi(currentUserIdStr.(string))
+	if err != nil {
+		SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
+		return
+	}
+
+	// 查询数据库获取用户信息
+	if result := models.DB.Preload("Roles").First(&user, currentUserId); result.Error != nil {
+		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+		return
+	}
+
+	responseData := structs.Map(user)
+
+	roleIDs := make([]int, len(user.Roles))
+	for i, role := range user.Roles {
+		roleIDs[i] = int(role.ID)
+	}
+	responseData["Roles"] = roleIDs
+
+	SendResponse(c, http.StatusOK, 200, responseData)
+}
+
+func UpdateCurrentUser(c *gin.Context) {
+	var userReq models.UserRequest
+
+	currentUserIdStr, ok := c.Get("user_id")
+	if !ok {
+		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+		return
+	}
+
+	currentUserId, err := strconv.Atoi(currentUserIdStr.(string))
+	if err != nil {
+		SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
+		return
+	}
+
+	// 查询数据库获取用户信息
+	if result := models.DB.First(&userReq.User, currentUserId); result.Error != nil {
+		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+		return
+	}
+
+	if err := c.BindJSON(&userReq); err != nil {
+		SendResponse(c, http.StatusOK, apierrors.InvalidRequestData, nil)
+		return
+	}
+
+	if userReq.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
+		if err != nil {
+			SendResponse(c, http.StatusOK, apierrors.InternalServerError, nil)
+			return
+		}
+		userReq.User.Password = string(hashedPassword)
+	}
+
+	if result := models.DB.Save(&userReq.User); result.Error != nil {
+		SendResponse(c, http.StatusOK, apierrors.DataNotFound, nil)
+		return
+	}
+
+	models.DB.Where("user_id = ?", userReq.ID).Delete(models.UserRole{})
+	for _, roleID := range userReq.Roles {
+		userRole := models.UserRole{
+			UserID:    userReq.ID,
+			RoleID:    roleID,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		models.DB.Create(&userRole)
+	}
+
+	SendResponse(c, http.StatusOK, 200, userReq.User)
 }
