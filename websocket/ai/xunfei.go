@@ -58,31 +58,6 @@ func GenParams(chatRoomID uint, question string) map[string]interface{} {
 	chatHistory = append(chatHistory, currentMessage)
 	log.Printf("上下文：%v\n", chatHistory)
 
-	// 添加 Function Call 后期插件调用
-	//functionCall := map[string]interface{}{
-	//	"text": []map[string]interface{}{
-	//		{
-	//			"name":        "天气查询",
-	//			"description": "天气插件可以提供天气相关信息。你可以提供指定的地点信息、指定的时间点或者时间段信息，来检索诗词库，精准检索到天气信息。",
-	//			"parameters": map[string]interface{}{
-	//				"type": "object",
-	//				"properties": map[string]interface{}{
-	//					"location": map[string]interface{}{
-	//						"type":        "string",
-	//						"description": "地点，比如北京。",
-	//					},
-	//					"date": map[string]interface{}{
-	//						"type":        "string",
-	//						"description": "日期。",
-	//					},
-	//				},
-	//				"required": []string{"location"},
-	//			},
-	//		},
-	//		// 这里可以继续添加其他 Function
-	//	},
-	//}
-
 	return map[string]interface{}{
 		"header": map[string]interface{}{
 			"app_id": os.Getenv("AI_APP_ID"),
@@ -193,34 +168,6 @@ func StartChatWithAI(chatRoomID uint, question string) string {
 			fmt.Println("解析content错误")
 			return answer
 		}
-
-		//for _, t := range text {
-		//	textMap, ok := t.(map[string]interface{})
-		//	if !ok {
-		//		continue
-		//	}
-		//
-		//	// 检查并处理 function_call
-		//	if functionCall, exists := textMap["function_call"]; exists {
-		//		fmt.Println("Function Call 响应:", functionCall)
-		//		// 根据 function_call 的内容执行相应操作
-		//		if functionName, ok := functionCall.(map[string]interface{})["name"].(string); ok {
-		//			switch functionName {
-		//			case "天气查询":
-		//				// 解析参数并执行天气查询
-		//				arguments := functionCall.(map[string]interface{})["arguments"].(string)
-		//				// 这里调用一个函数来处理天气查询，例如：
-		//				weatherInfo := queryWeather(arguments)
-		//				answer += weatherInfo
-		//			}
-		//		}
-		//	}
-		//
-		//	// 累加其他文本内容
-		//	if content, exists := textMap["content"].(string); exists && content != "" {
-		//		answer += content
-		//	}
-		//}
 
 		answer += content
 		if status == 2 {
