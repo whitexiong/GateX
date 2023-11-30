@@ -2,8 +2,11 @@ package ai
 
 import (
 	"crypto/hmac"
+	"crypto/md5"
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"gateway/models"
@@ -17,7 +20,7 @@ import (
 	"time"
 )
 
-// 构造讯飞AI认证URL
+// 大模型签名
 func AssembleAuthUrl() string {
 	apiSecret := os.Getenv("AI_API_SECRET")
 	apiKey := os.Getenv("AI_API_KEY")
@@ -41,6 +44,31 @@ func AssembleAuthUrl() string {
 	v.Add("authorization", authorization)
 
 	return hostUrl + "?" + v.Encode()
+}
+
+func HmacWithShaTobase64(signString []string, key string) string {
+	data := strings.Join(signString, "\n")
+	mac := hmac.New(sha256.New, []byte(key))
+	mac.Write([]byte(data))
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
+}
+
+// 文档问答的的签名
+func AssembleSignature() string {
+	appId := os.Getenv("AI_APP_ID")
+	secret := os.Getenv("AI_API_SECRET")
+
+	// 生成时间戳（秒）
+	timestamp := time.Now().Unix()
+	auth := md5.Sum([]byte(fmt.Sprintf("%s%d", appId, timestamp)))
+	authHex := hex.EncodeToString(auth[:])
+
+	// 使用 HMAC SHA1 生成签名
+	h := hmac.New(sha1.New, []byte(secret))
+	h.Write([]byte(authHex))
+	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	return signature
 }
 
 // 生成与讯飞AI交互的参数
@@ -235,13 +263,6 @@ func StartChatWithAI(chatRoomID uint, question string) string {
 
 func queryWeather(arguments string) string {
 	return "测试 func"
-}
-
-func HmacWithShaTobase64(signString []string, key string) string {
-	data := strings.Join(signString, "\n")
-	mac := hmac.New(sha256.New, []byte(key))
-	mac.Write([]byte(data))
-	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func readResp(resp *http.Response) string {

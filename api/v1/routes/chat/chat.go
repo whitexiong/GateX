@@ -12,4 +12,7 @@ func SetUpChat(r *gin.Engine) {
 	group.GET("/rooms", chat.GetChatWindowsByUser)
 	group.POST("/create", chat.CreateChatRoom)
 	group.GET("/delete/:roomId", chat.DeleteChatWindow)
+	group.GET("/events", chat.SSEHandler)
+	group.POST("/upload_document", chat.UploadDocument) //上传文档
+	group.POST("/chatdoc", chat.Chatdoc)                //文档问答
 }

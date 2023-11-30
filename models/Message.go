@@ -13,9 +13,9 @@ const (
 type AIProviderType int8
 
 const (
-	None AIProviderType = iota // 由人类发送，不是AI
-	XunFei
-	Baidu
+	None   AIProviderType = iota // 由人类发送，不是AI
+	XunFei                       // 星火大模型
+	Baidu                        // 文心一言
 )
 
 type Message struct {
